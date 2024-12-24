@@ -147,6 +147,72 @@ exports.updateUser = async (req, res) => {
             status: false,
             message: 'Ocorreu um erro interno',
             error: error.message
-        }) 
+        }); 
+    }
+};
+
+exports.deleteUser = async (req, res) => {
+    const { userId } = req.params;
+
+    try {
+        if (!userId) {
+            res.status(400).json({
+                status: false,
+                message: 'O ID é necessário'
+            });
+        };
+
+        const deletedUser = await UserModel.delete({userId});
+        
+        if (!deletedUser) {
+            return res.status(404).json({
+                status: false,
+                message: 'Usuário não encontrado ou excluído'
+            });
+        };
+        
+        res.status(200).json({
+            status: true,
+            message: 'Usuário excluído com sucesso'
+        });
+    } catch (error) {
+        res.status(500).json({
+            status: false,
+            message: 'Ocorreu um erro interno',
+            error: error.message
+        });
+    }
+};
+
+exports.restoreUser = async (req, res) => {
+    const { email } = req.body;
+
+    try {
+        if (!email) {
+            res.status(400).json({
+                status: false,
+                message: 'O email é necessário'
+            });
+        };
+
+        const restoredUser = await UserModel.restore({email});
+        
+        if (!restoredUser) {
+            return res.status(404).json({
+                status: false,
+                message: 'Usuário não encontrado ou restaurado'
+            });
+        };
+        
+        res.status(200).json({
+            status: true,
+            message: 'Usuário restaurado com sucesso'
+        });
+    } catch (error) {
+        res.status(500).json({
+            status: false,
+            message: 'Ocorreu um erro interno',
+            error: error.message
+        });
     }
 };

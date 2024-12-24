@@ -27,7 +27,7 @@ const User = {
             const query = `
                 SELECT user_id, email, name, created_at
                 FROM users
-                WHERE email = $1;
+                WHERE email = $1 AND deleted_at IS NULL;
             `;
             const values = [email];
             const result = await connection.query(query, values);
@@ -42,7 +42,7 @@ const User = {
             const query = `
                 SELECT user_id, email, name, created_at
                 FROM users
-                WHERE user_id = $1;
+                WHERE user_id = $1 AND deleted_at IS NULL;
             `;
             const values = [userId];
             const result = await connection.query(query, values);
@@ -88,12 +88,44 @@ const User = {
         }
     },
     
-    
-    delete: async () => {},
-    restore: async () => {},
+    delete: async ({userId}) => {
+        try {
+            const query = `
+                UPDATE users
+                SET deleted_at = CURRENT_TIMESTAMP
+                WHERE user_id = $1 AND deleted_at IS NULL;
+            `
+
+            const values = [userId];
+            const result = await connection.query(query, values);
+           
+            return result.rowCount;
+        } catch (error) {
+            throw new Error(`Erro ao deletar usuario: ${error.message}`);
+        }
+    },
+
+    restore: async ({email}) => {
+        try {
+            const query = `
+                UPDATE users
+                SET deleted_at = NULL
+                WHERE email = $1 AND deleted_at IS NOT NULL;
+            `;
+            const values = [email];
+            const result = await connection.query(query, values);
+            return result.rowCount;
+        } catch (error) {
+            throw new Error(`Erro ao restaurar usuario: ${error.message}`);
+        }
+    },
+
     verifyToken: async () => {},
+
     generateToken: async () => {},
+
     login: async () => {},
+
     resetPassword: async () => {},
 
 }
