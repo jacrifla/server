@@ -216,3 +216,68 @@ exports.restoreUser = async (req, res) => {
         });
     }
 };
+
+exports.resetPasswordUser = async (req, res) => {
+    const { email, newPassword } = req.body;
+    try {
+        if (!email || !newPassword) {
+            res.status(400).json({
+                status: false,
+                message: 'O email e a nova senha são necessárias'
+            });
+        };
+
+        const resetPassword = await UserModel.resetPassword({email, newPassword});
+
+        if (!resetPassword) {
+            return res.status(404).json({
+                status: false,
+                message: 'Usuário não encontrado ou senha resetada'
+            });
+        };
+
+        res.status(200).json({
+            status: true,
+            message: 'Senha resetada com sucesso'
+        });
+    } catch (error) {
+        res.status(500).json({
+            status: false,
+            message: 'Ocorreu um erro interno',
+            error: error.message
+        });
+    }
+};
+
+exports.loginUser = async (req, res) => {
+    const { email, password } = req.body;
+    try {
+        if (!email || !password) {
+            res.status(400).json({
+                status: false,
+                message: 'O email e a senha são necessárias'
+            });
+        };
+
+        const login = await UserModel.login({email, password});
+        
+        if (!login) {
+            return res.status(401).json({
+                status: false,
+                message: 'Email ou senha inválidos'
+            });
+        };
+
+        res.status(200).json({
+            status: true,
+            message: 'Login efetuado com sucesso',
+            data: login
+        });
+    } catch (error) {
+        res.status(500).json({
+            status: false,
+            message: 'Ocorreu um erro interno',
+            error: error.message
+        });
+    }
+};
