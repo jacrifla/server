@@ -3,6 +3,7 @@ const brandRoutes = require('../routes/brand');
 const categoryRoutes = require('../routes/category');
 const itemRoutes = require('../routes/items');
 const listRoutes = require('../routes/shoppingList');
+const listItemRoutes = require('../routes/listItem');
 
 module.exports = (app) => {
     app.use('/user', userRoutes);
@@ -10,4 +11,5 @@ module.exports = (app) => {
     app.use('/category', categoryRoutes);
     app.use('/items', itemRoutes);
     app.use('/shopping-list', listRoutes);
+    app.use('/list-item', listItemRoutes);
 }
