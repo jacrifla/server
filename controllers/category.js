@@ -67,3 +67,36 @@ exports.updateCategory = async (req, res) => {
         });
     }
 };
+
+exports.deleteCategory = async (req, res) => {
+    const { category_id } = req.params;
+
+    try {
+        if (!category_id) {
+            return res.status(400).json({
+                status: false,
+                message: 'ID da categoria é obrigatório'
+            });
+        };
+
+        const deleteCategory = await CategoryModel.delete({category_id});
+
+        if (!deleteCategory) {
+            return res.status(404).json({
+                status: false,
+                message: 'Categoria não encontrada ou excluída'
+            });
+        }
+
+        res.status(200).json({
+            status: true,
+            message: 'Categoria excluída com sucesso',
+        });
+    } catch (error) {
+        res.status(500).json({
+            status: false,
+            message: 'Ocorreu um erro interno',
+            error: error.message
+        });
+    }
+};

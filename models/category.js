@@ -65,6 +65,27 @@ const Category = {
             throw error;
         }
     },
+
+    delete: async ({category_id}) => {
+        try {
+            const exists = await Category.categoryExists(category_id);
+
+            if (!exists) {
+                throw new Error('Categoria não encontrada.');
+            }
+
+            const query = `
+                DELETE
+                FROM categories
+                WHERE category_id = $1;
+            `
+            const values = [category_id];
+            const result = await connection.query(query, values);
+            return result.rowCount;
+        } catch (error) {
+            throw new Error(`Error: ${error.message}`);
+        }
+    }
 }
 
 module.exports = Category;

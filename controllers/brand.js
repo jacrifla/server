@@ -74,3 +74,36 @@ exports.findAll = async (req, res) => {
         });
     }
 };
+
+exports.deleteBrand = async (req, res) => {
+    const {brand_id} = req.params;
+
+    try {
+        if (!brand_id) {
+            res.status(400).json({
+                status: false,
+                message: 'ID da marca é obrigatório'
+            });
+        };
+
+        const deletedBrand = await BrandModel.delete({ brand_id });
+
+        if (!deletedBrand) {
+            res.status(404).json({
+                status: false,
+                message: 'Marca não encontrada'
+            });
+        };
+
+        res.status(200).json({
+            status: true,
+            message: 'Marca deletada com sucesso'
+        });
+    } catch (error) {
+        res.status(500).json({
+            status: false,
+            message: 'Ocorreu um erro interno',
+            error: error.message
+        });
+    }
+};
