@@ -59,12 +59,15 @@ exports.updateItem = async (req, res) => {
             });
         };
 
-        const [updatedRows] = await ItemModel.update(
-            { product_name, category_id, brand_id, barcode },
-            { where: { item_id } }
-        );
+        const updatedItem = await ItemModel.update({
+            item_id,
+            product_name, 
+            category_id, 
+            brand_id, 
+            barcode
+        });
 
-        if (updatedRows === 0) {
+        if (!updatedItem) {
             return res.status(404).json({
                 status: false,
                 message: 'Item não encontrado para atualizar'
@@ -112,9 +115,7 @@ exports.deleteItem = async (req, res) => {
             });
         };
 
-        const deleteItem = await ItemModel.destroy({
-            where: { item_id }
-        });
+        const deleteItem = await ItemModel.delete({item_id});
 
         if (deleteItem === 0) {
             return res.status(404).json({

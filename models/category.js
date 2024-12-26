@@ -29,8 +29,29 @@ const Category = {
         }
     },
 
+    categoryExists: async (category_id) => {
+        try {
+            const query = `
+                SELECT 1
+                FROM categories
+                WHERE category_id = $1;
+            `
+            const values = [category_id];
+            const result = await connection.query(query, values);
+            return result.rowCount > 0;
+        } catch (error) {
+            throw new Error(`Não pode ser checado essa categoria: ${error.message}`);
+        }
+    },
+
     update: async ({ category_id, category_name }) => {
         try {
+            const exists = await Category.categoryExists(category_id);
+
+            if (!exists) {
+                throw new Error('Categoria não encontrada.');
+            }
+
             const query = `
                 UPDATE categories
                 SET category_name = $2
