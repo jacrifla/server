@@ -57,7 +57,8 @@ const Brand = {
         try {
             const query = `
                 SELECT brand_id, brand_name
-                FROM brands;
+                FROM brands
+                ORDER BY brand_name ASC;
             `;
             const result = await connection.query(query);
             return result.rows;

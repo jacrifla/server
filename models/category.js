@@ -12,7 +12,7 @@ const Category = {
             const result = await connection.query(query, values);
             return result.rows[0];
         } catch (error) {
-            throw error;
+            throw new Error(`Error: ${error.message}`);
         }
     },
 
@@ -20,12 +20,13 @@ const Category = {
         try {
             const query = `
                 SELECT category_id, category_name
-                FROM categories;
+                FROM categories
+                ORDER BY category_name ASC;
             `;
             const result = await connection.query(query);
             return result.rows;
         } catch (error) {
-            throw error;
+            throw new Error(`Error: ${error.message}`);
         }
     },
 
@@ -62,7 +63,7 @@ const Category = {
             const result = await connection.query(query, values);
             return result.rows[0];
         } catch (error) {
-            throw error;
+            throw new Error(`Error: ${error.message}`);
         }
     },
 

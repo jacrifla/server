@@ -2,6 +2,7 @@ const CategoryModel = require('../models/category');
 
 exports.createCategory = async (req, res) => {
     const { category_name } = req.body;
+
     try {
         if (!category_name) {
             return res.status(400).json({
@@ -9,7 +10,9 @@ exports.createCategory = async (req, res) => {
                 message: 'O nome da categoria é obrigatório'
             });
         };
+
         const newCategory = await CategoryModel.create({ category_name });
+        
         res.status(201).json({
             status: true,
             message: 'Categoria criada com sucesso',
@@ -44,6 +47,7 @@ exports.findAll = async (req, res) => {
 exports.updateCategory = async (req, res) => {
     const { category_id } = req.params;
     const { category_name } = req.body;
+
     try {
         if (!category_id ||!category_name) {
             return res.status(400).json({
@@ -51,7 +55,7 @@ exports.updateCategory = async (req, res) => {
                 message: 'ID da categoria e o nome da categoria são obrigatórios'
             });
         };
-        
+
         const updateCategory = await CategoryModel.update({category_id, category_name});
 
         res.status(200).json({
