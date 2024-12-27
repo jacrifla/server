@@ -29,12 +29,20 @@ const ShoppingList = {
         }
     },
 
-    findByUserId: async ({userId}) => {
+    findByUserId: async ({ userId }) => {
         try {
             const query = `
-                SELECT list_id, list_name, created_at, completed_at
+                SELECT 
+                    shopping_lists.list_id, 
+                    shopping_lists.list_name, 
+                    shopping_lists.created_at, 
+                    shopping_lists.completed_at, 
+                    shared_list.user_id AS shared_user_id, 
+                    shared_list.permission AS shared_permission,
+                    shared_list.shared_at
                 FROM shopping_lists
-                WHERE user_id = $1;
+                LEFT JOIN shared_list ON shopping_lists.list_id = shared_list.list_id
+                WHERE shopping_lists.user_id = $1;
             `;
             const values = [userId];
             const result = await connection.query(query, values);
@@ -43,6 +51,7 @@ const ShoppingList = {
             throw new Error(`Error: ${error.message}`);
         }
     },
+    
 
     update: async ({listId, listName}) => {
         try {
