@@ -1,89 +1,113 @@
--- Tabela de Usuários
-CREATE TABLE USUARIOS (
-    id_usuario SERIAL PRIMARY KEY,
-    nome VARCHAR(100) NOT NULL,
+-- Users Table
+CREATE TABLE USERS (
+    user_id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
-    senha VARCHAR(255) NOT NULL,
-    data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    data_atualizacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    status VARCHAR(20) CHECK (status IN ('ativo', 'inativo')) DEFAULT 'ativo',
-    preferencia_salvar_automatico BOOLEAN DEFAULT FALSE,
+    password VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP,
+    status VARCHAR(20) CHECK (status IN ('active', 'inactive')) DEFAULT 'active',
+    auto_save_preference BOOLEAN DEFAULT FALSE,
     CONSTRAINT chk_email_format CHECK (email LIKE '%_@__%.__%')
 );
 
-CREATE INDEX idx_email ON USUARIOS(email);
+CREATE INDEX idx_email ON USERS(email);
 
--- Tabela de Marcas
-CREATE TABLE MARCAS (
-    id_marca SERIAL PRIMARY KEY,
-    nome_marca VARCHAR(100) NOT NULL
+-- Brands Table
+CREATE TABLE BRANDS (
+    brand_id SERIAL PRIMARY KEY,
+    brand_name VARCHAR(100) NOT NULL
 );
 
--- Tabela de Categorias
-CREATE TABLE CATEGORIA (
-    id_categoria SERIAL PRIMARY KEY,
-    nome_categoria VARCHAR(100) NOT NULL
+-- Categories Table
+CREATE TABLE CATEGORIES (
+    category_id SERIAL PRIMARY KEY,
+    category_name VARCHAR(100) NOT NULL
 );
 
--- Tabela de Itens
-CREATE TABLE ITEM (
-    id_item SERIAL PRIMARY KEY,
-    nome_produto VARCHAR(100) NOT NULL,
-    id_categoria INT REFERENCES CATEGORIA(id_categoria),
-    id_marca INT REFERENCES MARCAS(id_marca),
-    codigo_barras BIGINT,
-    UNIQUE(nome_produto, id_marca, codigo_barras)
+-- Items Table
+CREATE TABLE ITEMS (
+    item_id SERIAL PRIMARY KEY,
+    product_name VARCHAR(100) NOT NULL,
+    category_id INT REFERENCES CATEGORIES(category_id),
+    brand_id INT REFERENCES BRANDS(brand_id),
+    barcode BIGINT,
+    UNIQUE(product_name, brand_id, barcode)
 );
 
-CREATE INDEX idx_nome_produto ON ITEM(nome_produto);
+CREATE INDEX idx_product_name ON ITEMS(product_name);
 
--- Tabela de Histórico de Preços
-CREATE TABLE HISTORICO_PRECO (
-    id_historico SERIAL PRIMARY KEY,
-    id_item INT REFERENCES ITEM(id_item),
-    preco_unitario DECIMAL(10, 2) NOT NULL CHECK (preco_unitario >= 0),
-    data_alteracao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    usuario_id INT REFERENCES USUARIOS(id_usuario),
-    CONSTRAINT chk_preco_positivo CHECK (preco_unitario >= 0)
+-- Price History Table
+CREATE TABLE PRICE_HISTORY (
+    history_id SERIAL PRIMARY KEY,
+    item_id INT REFERENCES ITEMS(item_id),
+    unit_price DECIMAL(10, 2) NOT NULL CHECK (unit_price >= 0),
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    user_id INT REFERENCES USERS(user_id),
+    CONSTRAINT chk_positive_price CHECK (unit_price >= 0)
 );
 
-CREATE INDEX idx_data_alteracao ON HISTORICO_PRECO(data_alteracao);
+CREATE INDEX idx_updated_at ON PRICE_HISTORY(updated_at);
 
--- Tabela de Lista de Compras
-CREATE TABLE LISTA_COMPRAS (
-    id_lista SERIAL PRIMARY KEY,
-    id_usuario INT REFERENCES USUARIOS(id_usuario),
-    nome_lista VARCHAR(100) NOT NULL,
-    data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    data_atualizacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    data_conclusao TIMESTAMP,
-    status VARCHAR(20) CHECK (status IN ('finalizada', 'pendente')) DEFAULT 'pendente'
+-- Shopping Lists Table
+CREATE TABLE SHOPPING_LISTS (
+    list_id SERIAL PRIMARY KEY,
+    user_id INT REFERENCES USERS(user_id),
+    list_name VARCHAR(100) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    completed_at TIMESTAMP,
+    status VARCHAR(20) CHECK (status IN ('completed', 'pending')) DEFAULT 'pending'
 );
 
-CREATE INDEX idx_lista_status ON LISTA_COMPRAS(status);
+CREATE INDEX idx_list_list_id ON SHOPPING_LISTS(list_id);
+CREATE INDEX idx_list_status ON SHOPPING_LISTS(status);
 
--- Tabela de Itens na Lista de Compras
-CREATE TABLE ITEM_LISTA (
-    id_item_lista SERIAL PRIMARY KEY,
-    id_lista INT REFERENCES LISTA_COMPRAS(id_lista),
-    id_item INT REFERENCES ITEM(id_item),
-    produto_custom VARCHAR(100), -- Para itens não cadastrados previamente
-    tipo_item VARCHAR(20) CHECK (tipo_item IN ('customizado', 'comum')) DEFAULT 'comum', -- Indica se o item é customizado ou não
-    quantidade INT CHECK (quantidade > 0) NULL,
-    preco_unitario DECIMAL(10, 2) NULL,
-    status VARCHAR(20) CHECK (status IN ('comprado', 'pendente')) DEFAULT 'pendente'
-);
-CREATE INDEX idx_item_lista ON ITEM_LISTA(id_lista, id_item);
-CREATE INDEX idx_item_lista_status ON ITEM_LISTA(status);
-
--- Tabela de Anotações dos Itens
-CREATE TABLE ANOTACOES_ITEM (
-    id_anotacao SERIAL PRIMARY KEY,
-    id_usuario INT REFERENCES USUARIOS(id_usuario),
-    id_item INT REFERENCES ITEM(id_item),
-    anotacao TEXT,
-    data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+-- Shopping List Items Table
+CREATE TABLE SHOPPING_LIST_ITEMS (
+    list_item_id SERIAL PRIMARY KEY,
+    list_id INT REFERENCES SHOPPING_LISTS(list_id),
+    item_id INT REFERENCES ITEMS(item_id),
+    custom_product VARCHAR(100), -- For custom items
+    item_type VARCHAR(20) CHECK (item_type IN ('custom', 'common')) DEFAULT 'common',
+    quantity INT CHECK (quantity > 0),
+    unit_price DECIMAL(10, 2),
+    status VARCHAR(20) CHECK (status IN ('purchased', 'pending')) DEFAULT 'pending'
 );
 
--- Índice no id_item para otimizar as buscas de anotações
-CREATE INDEX idx_anotacoes_item ON ANOTACOES_ITEM(id_item);
+CREATE INDEX idx_list_item ON SHOPPING_LIST_ITEMS(list_id, item_id);
+CREATE INDEX idx_list_item_status ON SHOPPING_LIST_ITEMS(status);
+
+-- Item Notes Table
+CREATE TABLE ITEM_NOTES (
+    note_id SERIAL PRIMARY KEY,
+    user_id INT REFERENCES USERS(user_id),
+    item_id INT REFERENCES ITEMS(item_id),
+    note TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_item_notes ON ITEM_NOTES(item_id);
+
+CREATE TABLE shared_list (
+    shared_list_id SERIAL PRIMARY KEY,
+    list_id INT REFERENCES SHOPPING_LISTS(list_id),
+    user_id INT REFERENCES users(user_id),
+    permission BOOLEAN DEFAULT false,
+    shared_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_shared_list_list_id ON shared_list(list_id);
+CREATE INDEX idx_shared_list_user_id ON shared_list(user_id);
+CREATE INDEX idx_shared_list_list_user ON shared_list(list_id, user_id);
+
+CREATE TABLE shared_list_tokens (
+    token_id SERIAL PRIMARY KEY,
+    list_id INT REFERENCES shopping_lists(list_id),
+    user_id INT REFERENCES users(user_id),
+    token VARCHAR(255) NOT NULL,
+    expires_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
