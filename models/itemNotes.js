@@ -3,6 +3,10 @@ const connection = require('../config/db');
 const ItemNotesModel = {
     createNote: async ({ user_id, item_id, note }) => {
         try {
+            if (!note || !user_id) {
+                throw new Error("Nota ou usuário não fornecidos.");
+            }
+
             const query = `
                 INSERT INTO item_notes (user_id, item_id, note)
                 VALUES ($1, $2, $3)
@@ -30,15 +34,15 @@ const ItemNotesModel = {
         }
     },
 
-    updateNote: async ({ note_id, note }) => {
+    updateNote: async ({ note, user_id, item_id }) => {
         try {
             const query = `
                 UPDATE item_notes
                 SET note = $1
-                WHERE note_id = $2
-                RETURNING note_id, user_id, item_id, note, created_at;
+                WHERE user_id = $2 AND item_id = $3
+                RETURNING note;
             `;
-            const values = [note, note_id];
+            const values = [note, user_id, item_id];
             const { rows } = await connection.query(query, values);
             return rows[0];
         } catch (error) {

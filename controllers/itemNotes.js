@@ -38,11 +38,10 @@ exports.getNotes = async (req, res) => {
 };
 
 exports.updateNote = async (req, res) => {
-    const { note_id } = req.params;
-    const { note } = req.body;
+    const { note, user_id, item_id } = req.body;
 
     try {
-        const updatedNote = await ItemNotesModel.updateNote({ note_id, note });
+        const updatedNote = await ItemNotesModel.updateNote({ note, user_id, item_id });
 
         if (!updatedNote) {
             return res.status(404).json({
