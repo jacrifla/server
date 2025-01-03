@@ -1,21 +1,21 @@
 const connection = require('../config/db');
 
 const SharedListModel = {
-    shareList: async ({ list_id, user_id }) => {
+    grantPermission: async ({listId, userId}) => {
         try {
             const query = `
-                INSERT INTO shared_list (list_id, user_id)
-                VALUES ($1, $2)
-                RETURNING shared_list_id, list_id, user_id, permission, shared_at;
+                INSERT INTO shared_list (list_id, user_id, permission)
+                VALUES ($1, $2, true)
+                RETURNING *;
             `;
-            const values = [list_id, user_id];
+            const values = [listId, userId];
             const { rows } = await connection.query(query, values);
             return rows[0];
         } catch (error) {
             throw new Error(`Error: ${error.message}`);
         }
     },
-
+    
     getSharedLists: async (user_id) => {
         try {
             const query = `
