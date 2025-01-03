@@ -1,14 +1,14 @@
 const connection = require('../config/db');
 
 const SharedListToken = {
-    create: async ({ listId, userId, token, expiresAt, createdAt }) => {
+    generateToken: async ({ listId, userId, token, expiresAt }) => {
         try {
             const query = `
                 INSERT INTO shared_list_tokens (list_id, user_id, token, expires_at, created_at)
-                VALUES ($1, $2, $3, $4, $5)
+                VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)
                 RETURNING token_id, token, expires_at, created_at;
             `;
-            const values = [listId, userId, token, expiresAt, createdAt];
+            const values = [listId, userId, token, expiresAt];
 
             const result = await connection.query(query, values);
             return result.rows[0];
@@ -45,7 +45,7 @@ const SharedListToken = {
             const query = `
                 SELECT list_id, user_id, expires_at
                 FROM shared_list_tokens
-                WHERE token = $1;
+                WHERE token = $1 AND expires_at > CURRENT_TIMESTAMP;
             `;
             const values = [token];
             const result = await connection.query(query, values);
@@ -84,7 +84,7 @@ const SharedListToken = {
         } catch (error) {
             throw new Error(`Error: ${error.message}`);
         }
-    }
+    },
 }
 
 module.exports = SharedListToken;

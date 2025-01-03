@@ -1,56 +1,39 @@
 const SharedListToken = require('../models/sharedListTokens');
+const { DateTime } = require('luxon');
 const crypto = require('crypto');
+const SharedListModel = require('../models/shareList');
 
-exports.shareList = async (req, res) => {
-    const { listId } = req.params;
-    const { userId } = req.body;
+
+exports.generateToken = async (req, res) => {
+    const { listId, userId } = req.body;
+
+    if (!listId || !userId) {
+        return res.status(400).json({
+            status: false,
+            message: 'listId e userId são obrigatórios.',
+        });
+    }
+
+    const token = crypto.randomBytes(16).toString('hex');
+    const expiresAt = DateTime.now().plus({ hours: 5 }).toUTC().toISO();
 
     try {
-        // Gerar token
-        const token = crypto.randomBytes(16).toString('hex');
+        const newToken = await SharedListToken.generateToken({ listId, userId, token, expiresAt });
 
-        // Configurar fuso horário local
-        const localTimeZone = 'America/Sao_Paulo';
-
-        // Hora atual no fuso horário local
-        const now = new Date().toLocaleString('en-US', { timeZone: localTimeZone });
-        const currentTime = new Date(now);
-
-        if (isNaN(currentTime)) {
-            throw new Error('Failed to determine local current time.');
-        }
-
-        // Configurar expiração
-        const expiresAt = new Date(currentTime);
-        expiresAt.setHours(expiresAt.getHours() + 3);
-
-        if (isNaN(expiresAt)) {
-            throw new Error('Failed to determine expiration time.');
-        }
-
-        // Salvar no banco
-        const newToken = await SharedListToken.create({
-            listId,
-            userId,
-            token,
-            expiresAt: expiresAt.toISOString(),
-            createdAt: currentTime.toISOString(),
-        });
-
-        // Responder com sucesso
-        res.status(200).json({
+        res.status(201).json({
             status: true,
-            message: 'Lista compartilhada com sucesso!',
-            token: newToken.token,
+            message: 'Token gerado com sucesso.',
+            data: newToken,
         });
     } catch (error) {
         res.status(500).json({
             status: false,
-            message: 'Erro ao compartilhar a lista',
+            message: 'Erro ao gerar token.',
             error: error.message,
         });
     }
 };
+
 exports.findToken = async (req, res) => {
     const { token } = req.params;
 
@@ -78,12 +61,11 @@ exports.findToken = async (req, res) => {
     }
 };
 
-
-exports.deleteToken = async (req, res) => {
+exports.revokeToken = async (req, res) => {
     const { token } = req.params;
 
     try {
-        await SharedListToken.delete({token});
+        await SharedListToken.delete({ token });
 
         res.status(200).json({
             status: true,
@@ -98,7 +80,7 @@ exports.deleteToken = async (req, res) => {
     }
 };
 
-exports.findAlltoken = async (req, res) => {
+exports.findAllToken = async (req, res) => {
     try {
         const token = await SharedListToken.findAllToken();
         res.status(200).json({
@@ -111,6 +93,49 @@ exports.findAlltoken = async (req, res) => {
             status: false,
             message: 'Erro ao revogar compartilhamento',
             error: error.message
+        });
+    }
+};
+
+exports.grantAccess = async (req, res) => {
+    const { token, userId } = req.body;
+
+    try {
+        // Verificar se o token existe e está válido
+        const tokenData = await SharedListToken.findToken({ token });
+        if (!tokenData) {
+            return res.status(400).json({
+                status: false,
+                message: 'Token inválido ou expirado.',
+            });
+        }
+
+        // Pegar o ID da lista associado ao token
+        const { list_id: listId } = tokenData;
+
+        // Conceder permissão
+        const shareList = await SharedListModel.grantPermission({ listId, userId });
+
+        // Após conceder a permissão, apagar o token
+        await SharedListToken.delete({ token });
+
+        res.status(200).json({
+            status: true,
+            message: 'Permissão concedida com sucesso.',
+            data: shareList,
+        });
+    } catch (error) {
+        if (error.message.includes('duplicate key value violates unique constraint')) {
+            return res.status(400).json({
+                status: false,
+                message: 'A lista já foi compartilhada com esse usuário.',
+            });
+        };
+
+        res.status(500).json({
+            status: false,
+            message: 'Erro ao conceder permissão.',
+            error: error.message,
         });
     }
 };
