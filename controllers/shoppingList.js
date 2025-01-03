@@ -56,7 +56,7 @@ exports.findListsByUserId = async (req, res) => {
     };
 
     try {
-        const getUserLists = await ListModel.findAll({userId});
+        const getUserLists = await ListModel.findByUserId({userId});        
         
         res.status(200).json({
             status: true,
