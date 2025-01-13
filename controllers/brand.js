@@ -1,16 +1,16 @@
 const BrandModel = require('../models/brand');
 
 exports.createBrand = async (req, res) => {
-    const { brand_name } = req.body;
+    const { brandName } = req.body;
     try {
-        if (!brand_name) {
-            res.status(400).json({
+        if (!brandName) {
+            return res.status(400).json({
                 status: false,
                 message: 'O nome é obrigatório'
             });
-        };
+        }
 
-        const newBrand = await BrandModel.create({ brand_name });
+        const newBrand = await BrandModel.create({ brandName });
         res.status(201).json({
             status: true,
             message: 'Marca criada com sucesso',
@@ -26,17 +26,18 @@ exports.createBrand = async (req, res) => {
 };
 
 exports.updateBrand = async (req, res) => {
-    const { brand_id } = req.params;
-    const { brand_name } = req.body;
+    const { brandId } = req.params;
+    const { brandName } = req.body;
+
     try {
-        if (!brand_id || !brand_name) {
-            res.status(400).json({
+        if (!brandId || !brandName) {
+            return res.status(400).json({
                 status: false,
                 message: 'ID da marca e o nome são obrigatórios'
             });
-        };
+        }
 
-        const updatedBrand = await BrandModel.update({ brand_id, brand_name });
+        const updatedBrand = await BrandModel.update({ brandId, brandName });
         if (updatedBrand) {
             res.status(200).json({
                 status: true,
@@ -48,7 +49,7 @@ exports.updateBrand = async (req, res) => {
                 status: false,
                 message: 'Marca não encontrada'
             });
-        };
+        }
     } catch (error) {
         res.status(500).json({
             status: false,
@@ -76,24 +77,24 @@ exports.findAll = async (req, res) => {
 };
 
 exports.deleteBrand = async (req, res) => {
-    const {brand_id} = req.params;
+    const { brandId } = req.params;
 
     try {
-        if (!brand_id) {
-            res.status(400).json({
+        if (!brandId) {
+            return res.status(400).json({
                 status: false,
                 message: 'ID da marca é obrigatório'
             });
-        };
+        }
 
-        const deletedBrand = await BrandModel.delete({ brand_id });
+        const deletedBrand = await BrandModel.delete({ brandId });
 
         if (!deletedBrand) {
-            res.status(404).json({
+            return res.status(404).json({
                 status: false,
                 message: 'Marca não encontrada'
             });
-        };
+        }
 
         res.status(200).json({
             status: true,
