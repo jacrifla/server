@@ -1,11 +1,12 @@
+const ItemNotesModel = require('../models/itemNotes');
 const ItemModel = require('../models/items');
 const { isValidBarcode } = require('../utils/validation');
 
 exports.createItem = async (req, res) => {
-    const { product_name, category_id, brand_id, barcode } = req.body;
+    const { productName, categoryId, brandId, barcode, note, userId } = req.body;    
 
     try {
-        if (!product_name || !category_id || !brand_id) {
+        if (!productName || !categoryId || !brandId) {
             return res.status(400).json({
                 status: false,
                 message: 'Todos os dados obrigatórios devem ser fornecidos'
@@ -19,12 +20,22 @@ exports.createItem = async (req, res) => {
             });
         }
 
-        const newItem = await ItemModel.create({ 
-            product_name, 
-            category_id, 
-            brand_id, 
-            barcode 
+        // Criar o item
+        const newItem = await ItemModel.create({
+            productName,
+            categoryId,
+            brandId,
+            barcode
         });
+
+        // Se houver uma nota, criar a nota associada ao item
+        if (note && userId) {
+            await ItemNotesModel.createNote({
+                userId,
+                itemId: newItem.itemId,
+                note
+            });
+        }
 
         res.status(201).json({
             status: true,
@@ -41,30 +52,33 @@ exports.createItem = async (req, res) => {
 };
 
 exports.updateItem = async (req, res) => {
-    const { item_id } = req.params;
-    const { product_name, category_id, brand_id, barcode } = req.body;
+    const { itemId } = req.params;
+    const { productName, categoryId, brandId, barcode, note, userId } = req.body;
 
     try {
-        if (!item_id) {
+        if (!itemId) {
             return res.status(400).json({
                 status: false,
                 message: 'ID do item é necessário'
             });
-        };
+        }
 
         if (barcode && !isValidBarcode(barcode)) {
             return res.status(400).json({
                 status: false,
                 message: 'O código de barras é inválido'
             });
-        };
+        }
 
+        // Atualizar o item
         const updatedItem = await ItemModel.update({
-            item_id,
-            product_name, 
-            category_id, 
-            brand_id, 
-            barcode
+            itemId,
+            productName,
+            categoryId,
+            brandId,
+            barcode,
+            note,
+            userId
         });
 
         if (!updatedItem) {
@@ -74,9 +88,11 @@ exports.updateItem = async (req, res) => {
             });
         }
 
+        // Retornar a resposta com o item atualizado, incluindo note e userId
         return res.status(200).json({
             status: true,
-            message: 'Item atualizado com sucesso'
+            message: 'Item atualizado com sucesso',
+            data: updatedItem
         });
     } catch (error) {
         res.status(500).json({
@@ -105,17 +121,17 @@ exports.findAll = async (req, res) => {
 };
 
 exports.deleteItem = async (req, res) => {
-    const { item_id } = req.params;
+    const { itemId } = req.params;
 
     try {
-        if (!item_id) {
+        if (!itemId) {
             return res.status(400).json({
                 status: false,
                 message: 'ID do item é necessário'
             });
-        };
+        }
 
-        const deleteItem = await ItemModel.delete({item_id});
+        const deleteItem = await ItemModel.delete({ itemId });
 
         if (deleteItem === 0) {
             return res.status(404).json({
@@ -123,7 +139,7 @@ exports.deleteItem = async (req, res) => {
                 message: 'Item não encontrado ou já excluído'
             });
         }
-        
+
         res.status(200).json({
             status: true,
             message: 'Item excluído com sucesso'
@@ -138,24 +154,24 @@ exports.deleteItem = async (req, res) => {
 };
 
 exports.findById = async (req, res) => {
-    const { item_id } = req.params;
+    const { itemId } = req.params;
 
     try {
-        if (!item_id) {
+        if (!itemId) {
             return res.status(400).json({
                 status: false,
                 message: 'ID do item é necessário'
             });
-        };
-        
-        const item = await ItemModel.findById({ item_id });
+        }
+
+        const item = await ItemModel.findById({ itemId });
 
         if (!item) {
             return res.status(404).json({
                 status: false,
                 message: 'Item não encontrado'
             });
-        };
+        }
 
         res.status(200).json({
             status: true,
@@ -172,24 +188,22 @@ exports.findById = async (req, res) => {
 };
 
 exports.searchByName = async (req, res) => {
-    const { product_name } = req.query;
-    
-    if (!product_name || product_name.trim() === '') {
+    const { productName } = req.query;
+
+    if (!productName || productName.trim() === '') {
         return res.status(400).json({
             status: false,
             message: 'Nome do item é necessário e não pode ser vazio'
         });
-    }    
+    }
 
     try {
-        if (typeof product_name !== 'string') {
-            throw new Error('Parâmetro product_name deve ser uma string');
+        if (typeof productName !== 'string') {
+            throw new Error('Parâmetro productName deve ser uma string');
         }
 
-        const items = await ItemModel.findItemsByName({ product_name });
-        // console.log('ITEMS: ', items);
-        
-        
+        const items = await ItemModel.findItemsByName({ productName });
+
         res.status(200).json({
             status: true,
             message: 'Itens encontrados com sucesso',
@@ -213,17 +227,17 @@ exports.searchByBarcode = async (req, res) => {
             status: false,
             message: 'Código de barras é necessário'
         });
-    };
+    }
 
     try {
-        const item = await ItemModel.findItemByBarcode({barcode});
+        const item = await ItemModel.findItemByBarcode({ barcode });
 
         if (!item) {
             return res.status(404).json({
                 status: false,
                 message: 'Item não encontrado'
             });
-        };
+        }
 
         res.status(200).json({
             status: true,
@@ -240,11 +254,11 @@ exports.searchByBarcode = async (req, res) => {
 };
 
 exports.searchAllWithPagination = async (req, res) => {
-    const { limit = 10, offset = 0} = req.query;
+    const { limit = 10, offset = 0 } = req.query;
 
     try {
         const items = await ItemModel.findAllWithPagination(Number(limit), Number(offset));
-        
+
         res.status(200).json({
             status: true,
             message: 'Itens encontrados com sucesso',

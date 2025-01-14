@@ -1,29 +1,43 @@
 const connection = require('../config/db');
+const ItemNotesModel = require('./itemNotes');
 
 const Items = {
-    create: async ({product_name, category_id, brand_id, barcode = null}) => {
+    create: async ({ productName, categoryId, brandId, barcode = null, note = null, userId = null }) => {
         try {
             const query = `
                 INSERT INTO items (product_name, category_id, brand_id, barcode)
                 VALUES ($1, $2, $3, $4)
                 RETURNING item_id, product_name, category_id, brand_id, barcode;
             `;
-            const values = [product_name, category_id, brand_id, barcode];
+            const values = [productName, categoryId, brandId, barcode];
             const result = await connection.query(query, values);
-            return result.rows[0];
+            const newItem = {
+                itemId: result.rows[0].item_id,
+                productName: result.rows[0].product_name,
+                categoryId: result.rows[0].category_id,
+                brandId: result.rows[0].brand_id,
+                barcode: result.rows[0].barcode,
+                observation: null
+            }
+
+            if (note) {
+                await ItemNotesModel.createNote({ userId, itemId: newItem.item_id, note });
+            }
+
+            return newItem;
         } catch (error) {
             throw new Error(`Error: ${error.message}`);
         }
     },
 
-    itemExists: async ({item_id}) => {
+    itemExists: async ({ itemId }) => {
         try {
             const query = `
                 SELECT 1
                 FROM items
                 WHERE item_id = $1;
             `;
-            const values = [item_id];
+            const values = [itemId];
             const result = await connection.query(query, values);
             return result.rows.length > 0;
         } catch (error) {
@@ -31,71 +45,90 @@ const Items = {
         }
     },
 
-    update: async ({item_id, product_name, category_id, brand_id, barcode}) => {
+    update: async ({ itemId, productName, categoryId, brandId, barcode, note = null, userId = null }) => {        
         try {
-            const exists = await Items.itemExists({item_id});
-            
+            const exists = await Items.itemExists({ itemId });
+
             if (!exists) {
-                throw new Error(`Item com ID ${item_id} não encontrado.`);
+                throw new Error(`Item com ID ${itemId} não encontrado.`);
             }
 
             let query = `
                 UPDATE items
                 SET
             `;
-            
+
             const values = [];
             const setFields = [];
-            
-            if (product_name) {
+
+            if (productName) {
                 setFields.push(`product_name = $${setFields.length + 1}`);
-                values.push(product_name);
+                values.push(productName);
             }
-            if (category_id) {
+            if (categoryId) {
                 setFields.push(`category_id = $${setFields.length + 1}`);
-                values.push(category_id);
+                values.push(categoryId);
             }
-            if (brand_id) {
+            if (brandId) {
                 setFields.push(`brand_id = $${setFields.length + 1}`);
-                values.push(brand_id);
+                values.push(brandId);
             }
             if (barcode) {
                 setFields.push(`barcode = $${setFields.length + 1}`);
                 values.push(barcode);
             }
-            
+
             if (setFields.length === 0) {
                 throw new Error("Nenhum campo a ser atualizado foi fornecido.");
             }
-    
+
             query += setFields.join(', ') + `
                 WHERE item_id = $${setFields.length + 1}
                 RETURNING item_id, product_name, category_id, brand_id, barcode;
             `;
-            
-            values.push(item_id);
-    
+
+            values.push(itemId);
+
             const result = await connection.query(query, values);
-            return result.rows[0];
+            
+            const updatedItem = result.rows[0];
+            console.log(updatedItem);
+            
+
+            const formattedItem = {
+                itemId: updatedItem.item_id,
+                productName: updatedItem.product_name,
+                categoryId: updatedItem.category_id,
+                brandId: updatedItem.brand_id,
+                barcode: updatedItem.barcode
+            };
+
+            if (note) {
+                await ItemNotesModel.updateNote({ note, userId, itemId });
+                formattedItem.note = note;
+                formattedItem.userId = userId;
+            }            
+
+            return formattedItem;
         } catch (error) {
             throw new Error(`Error: ${error.message}`);
         }
     },
-    
-    delete: async ({item_id}) => {
-        
+
+    delete: async ({ itemId }) => {
+
         try {
-            const exists = await Items.itemExists({item_id});
-                
+            const exists = await Items.itemExists({ itemId });
+
             if (!exists) {
-                throw new Error(`Item com ID ${item_id} não encontrado.`);
+                throw new Error(`Item com ID ${itemId} não encontrado.`);
             }
 
             const query = `
                 DELETE FROM items
                 WHERE item_id = $1;
             `;
-            const values = [item_id];
+            const values = [itemId];
             await connection.query(query, values);
         } catch (error) {
             throw new Error(`Error: ${error.message}`);
@@ -107,25 +140,45 @@ const Items = {
             const query = `
                 SELECT 
                     items.item_id, 
-                    items.product_name, 
-                    categories.category_name, 
+                    items.product_name,
+                    items.category_id,
+                    categories.category_name,
+                    items.brand_id,
                     brands.brand_name, 
-                    items.barcode
+                    items.barcode,
+                    item_notes.note_id,
+                    item_notes.user_id,
+                    item_notes.note AS observation
                 FROM 
                     items
                 LEFT JOIN 
                     categories ON items.category_id = categories.category_id
                 LEFT JOIN 
-                    brands ON items.brand_id = brands.brand_id;
+                    brands ON items.brand_id = brands.brand_id
+                LEFT JOIN
+                    item_notes ON items.item_id = item_notes.item_id;
             `;
             const result = await connection.query(query);
-            return result.rows;
+
+            // Formatação dos itens
+            const formattedItems = result.rows.map(item => ({
+                itemId: item.item_id,
+                item: item.product_name,
+                categoryId: item.category_id,
+                categoryName: item.category_name,
+                brandId: item.brand_id,
+                brandName: item.brand_name,
+                barcode: item.barcode,
+                observation: item.observation || null
+            }));            
+
+            return formattedItems;
         } catch (error) {
             throw new Error(`Error: ${error.message}`);
         }
     },
 
-    findById: async ({item_id}) => {
+    findById: async ({ itemId }) => {
         try {
             const query = `
                 SELECT 
@@ -133,25 +186,38 @@ const Items = {
                     items.product_name, 
                     categories.category_name, 
                     brands.brand_name, 
-                    items.barcode
+                    items.barcode,
+                    item_notes.note AS observation  -- Incluindo observação na busca por ID
                 FROM 
                     items
                 LEFT JOIN 
                     categories ON items.category_id = categories.category_id
                 LEFT JOIN 
                     brands ON items.brand_id = brands.brand_id
+                LEFT JOIN
+                    item_notes ON items.item_id = item_notes.item_id
                 WHERE 
                     items.item_id = $1;
             `;
-            const values = [item_id];
+            const values = [itemId];
             const result = await connection.query(query, values);
-            return result.rows[0];
+    
+            const item = result.rows[0];
+            return {
+                itemId: item.item_id,
+                item: item.product_name,
+                categoryName: item.category_name,
+                brandName: item.brand_name,
+                barcode: item.barcode,
+                observation: item.observation || null
+            };
         } catch (error) {
             throw new Error(`Error: ${error.message}`);
         }
     },
+    
 
-    findItemsByName: async ({ product_name }) => {
+    findItemsByName: async ({ productName }) => {
         try {
             const query = `
                 SELECT 
@@ -159,27 +225,38 @@ const Items = {
                     items.product_name, 
                     categories.category_name, 
                     brands.brand_name, 
-                    items.barcode
+                    items.barcode,
+                    item_notes.note AS observation  -- Incluindo observação na busca por nome
                 FROM 
                     items
                 LEFT JOIN 
                     categories ON items.category_id = categories.category_id
                 LEFT JOIN 
                     brands ON items.brand_id = brands.brand_id
+                LEFT JOIN
+                    item_notes ON items.item_id = item_notes.item_id
                 WHERE 
                     LOWER(items.product_name) LIKE LOWER($1);
             `;
-            const values = [`%${product_name}%`];
+            const values = [`%${productName}%`];
     
             const result = await connection.query(query, values);
-
-            return result.rows;
+    
+            return result.rows.map(item => ({
+                itemId: item.item_id,
+                item: item.product_name,
+                categoryName: item.category_name,
+                brandName: item.brand_name,
+                barcode: item.barcode,
+                observation: item.observation || null
+            }));
         } catch (error) {
             throw new Error(`Error: ${error.message}`);
         }
-    }, 
+    },
+    
 
-    findItemByBarcode: async ({barcode}) => {
+    findItemByBarcode: async ({ barcode }) => {
         try {
             const query = `
                 SELECT 
@@ -187,23 +264,35 @@ const Items = {
                     items.product_name, 
                     categories.category_name, 
                     brands.brand_name, 
-                    items.barcode
+                    items.barcode,
+                    item_notes.note AS observation  -- Incluindo observação na busca por código de barras
                 FROM 
                     items
                 LEFT JOIN 
                     categories ON items.category_id = categories.category_id
                 LEFT JOIN 
                     brands ON items.brand_id = brands.brand_id
+                LEFT JOIN
+                    item_notes ON items.item_id = item_notes.item_id
                 WHERE 
                     items.barcode = $1;
             `;
             const values = [barcode];
             const result = await connection.query(query, values);
-            return result.rows[0];
+    
+            return result.rows.map(item => ({
+                itemId: item.item_id,
+                item: item.product_name,
+                categoryName: item.category_name,
+                brandName: item.brand_name,
+                barcode: item.barcode,
+                observation: item.observation || null
+            }));
         } catch (error) {
             throw new Error(`Error: ${error.message}`);
         }
     },
+    
 
     findAllWithPagination: async (limit = 10, offset = 0) => {
         try {
@@ -213,22 +302,34 @@ const Items = {
                     items.product_name, 
                     categories.category_name, 
                     brands.brand_name, 
-                    items.barcode
+                    items.barcode,
+                    item_notes.note AS observation  -- Incluindo observação com paginação
                 FROM 
                     items
                 LEFT JOIN 
                     categories ON items.category_id = categories.category_id
                 LEFT JOIN 
                     brands ON items.brand_id = brands.brand_id
+                LEFT JOIN
+                    item_notes ON items.item_id = item_notes.item_id
                 LIMIT $1 OFFSET $2;
             `;
             const values = [limit, offset];
             const result = await connection.query(query, values);
-            return result.rows;
+    
+            return result.rows.map(item => ({
+                itemId: item.item_id,
+                item: item.product_name,
+                categoryName: item.category_name,
+                brandName: item.brand_name,
+                barcode: item.barcode,
+                observation: item.observation || null
+            }));
         } catch (error) {
-            throw new Error(`Error fetching items with pagination: ${error.message}`);
+            throw new Error(`Error: ${error.message}`);
         }
     },
+    
 }
 
 module.exports = Items;
