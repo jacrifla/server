@@ -1,17 +1,17 @@
 const CategoryModel = require('../models/category');
 
 exports.createCategory = async (req, res) => {
-    const { category_name } = req.body;
+    const { categoryName } = req.body;
 
     try {
-        if (!category_name) {
+        if (!categoryName) {
             return res.status(400).json({
                 status: false,
                 message: 'O nome da categoria é obrigatório'
             });
         };
 
-        const newCategory = await CategoryModel.create({ category_name });
+        const newCategory = await CategoryModel.create({ categoryName });
         
         res.status(201).json({
             status: true,
@@ -21,8 +21,7 @@ exports.createCategory = async (req, res) => {
     } catch (error) {
         res.status(500).json({
             status: false,
-            message: 'Ocorreu um erro interno',
-            error: error.message
+            message: error.message,
         });
     }
 };
@@ -38,25 +37,24 @@ exports.findAll = async (req, res) => {
     } catch (error) {
         res.status(500).json({
             status: false,
-            message: 'Ocorreu um erro interno',
-            error: error.message
+            message: error.message,
         });
     }
 };
 
 exports.updateCategory = async (req, res) => {
-    const { category_id } = req.params;
-    const { category_name } = req.body;
+    const { categoryId } = req.params;
+    const { categoryName } = req.body;
 
     try {
-        if (!category_id ||!category_name) {
+        if (!categoryId ||!categoryName) {
             return res.status(400).json({
                 status: false,
                 message: 'ID da categoria e o nome da categoria são obrigatórios'
             });
         };
 
-        const updateCategory = await CategoryModel.update({category_id, category_name});
+        const updateCategory = await CategoryModel.update({categoryId, categoryName});
 
         res.status(200).json({
             status: true,
@@ -66,24 +64,23 @@ exports.updateCategory = async (req, res) => {
     } catch (error) {
         res.status(500).json({
             status: false,
-            message: 'Ocorreu um erro interno',
-            error: error.message
+            message: error.message,
         });
     }
 };
 
 exports.deleteCategory = async (req, res) => {
-    const { category_id } = req.params;
+    const { categoryId } = req.params;
 
     try {
-        if (!category_id) {
+        if (!categoryId) {
             return res.status(400).json({
                 status: false,
                 message: 'ID da categoria é obrigatório'
             });
         };
 
-        const deleteCategory = await CategoryModel.delete({category_id});
+        const deleteCategory = await CategoryModel.delete({categoryId});
 
         if (!deleteCategory) {
             return res.status(404).json({
@@ -99,8 +96,7 @@ exports.deleteCategory = async (req, res) => {
     } catch (error) {
         res.status(500).json({
             status: false,
-            message: 'Ocorreu um erro interno',
-            error: error.message
+            message: error.message,
         });
     }
 };
