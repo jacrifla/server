@@ -1,10 +1,10 @@
 const ItemNotesModel = require('../models/itemNotes');
 
 exports.createNote = async (req, res) => {
-    const { user_id, item_id, note } = req.body;
+    const { userId, itemId, note } = req.body;
 
     try {
-        const newNote = await ItemNotesModel.createNote({ user_id, item_id, note });
+        const newNote = await ItemNotesModel.createNote({ userId, itemId, note });
         res.status(201).json({
             status: true,
             message: 'Anotação criada com sucesso.',
@@ -20,10 +20,10 @@ exports.createNote = async (req, res) => {
 };
 
 exports.getNotes = async (req, res) => {
-    const { item_id } = req.params;
+    const { itemId } = req.params;
 
     try {
-        const notes = await ItemNotesModel.getNotes(item_id);
+        const notes = await ItemNotesModel.getNotes(itemId);
         res.status(200).json({
             status: true,
             data: notes
@@ -38,10 +38,10 @@ exports.getNotes = async (req, res) => {
 };
 
 exports.updateNote = async (req, res) => {
-    const { note, user_id, item_id } = req.body;
+    const { note, userId, itemId } = req.body;
 
     try {
-        const updatedNote = await ItemNotesModel.updateNote({ note, user_id, item_id });
+        const updatedNote = await ItemNotesModel.updateNote({ note, userId, itemId });
 
         if (!updatedNote) {
             return res.status(404).json({
