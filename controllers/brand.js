@@ -19,8 +19,7 @@ exports.createBrand = async (req, res) => {
     } catch (error) {
         res.status(500).json({
             status: false,
-            message: 'Ocorreu um erro interno',
-            error: error.message
+            message:  error.message
         });
     }
 };
@@ -53,8 +52,7 @@ exports.updateBrand = async (req, res) => {
     } catch (error) {
         res.status(500).json({
             status: false,
-            message: 'Ocorreu um erro interno',
-            error: error.message
+            message:  error.message
         });
     }
 };
@@ -70,8 +68,7 @@ exports.findAll = async (req, res) => {
     } catch (error) {
         res.status(500).json({
             status: false,
-            message: 'Ocorreu um erro interno',
-            error: error.message
+            message:  error.message
         });
     }
 };
@@ -103,8 +100,7 @@ exports.deleteBrand = async (req, res) => {
     } catch (error) {
         res.status(500).json({
             status: false,
-            message: 'Ocorreu um erro interno',
-            error: error.message
+            message:  error.message
         });
     }
 };

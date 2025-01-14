@@ -17,7 +17,7 @@ const Brand = {
 
             return newBrand;
         } catch (error) {
-            throw new Error(`Erro: ${error.message}`);
+            throw new Error(`${error.message}`);
         }
     },
 
@@ -59,7 +59,7 @@ const Brand = {
 
             return updatedBrand;
         } catch (error) {
-            throw new Error(`Erro: ${error.message}`);
+            throw new Error(`${error.message}`);
         }
     },
 
@@ -77,7 +77,7 @@ const Brand = {
             }))
             return brands;
         } catch (error) {
-            throw new Error(`Erro: ${error.message}`);
+            throw new Error(`${error.message}`);
         }
     },
 
@@ -98,7 +98,7 @@ const Brand = {
             const result = await connection.query(query, values);
             return result.rowCount > 0;
         } catch (error) {
-            throw new Error(`Erro: ${error.message}`);
+            throw new Error(`${error.message}`);
         }
     },
 
