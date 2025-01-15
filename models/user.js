@@ -16,7 +16,12 @@ const User = {
             `
             const values = [name, email, hashedPassword];
             const result = await connection.query(query, values);
-            return result.rows[0];
+            return {
+                userId: result.rows[0].user_id,
+                name,
+                email,
+                createdAt: result.rows[0].created_at
+            };
         } catch (error) {
             throw new Error(`Erro ao criar usuario: ${error.message}`);
         }
@@ -31,7 +36,12 @@ const User = {
             `;
             const values = [email];
             const result = await connection.query(query, values);
-            return result.rows[0];
+            return {
+                userId: result.rows[0].user_id,
+                name: result.rows[0].name,
+                email,
+                createdAt: result.rows[0].created_at
+            };
         } catch (error) {
             throw new Error(`Erro ao buscar usuario por email: ${error.message}`);
         }
@@ -46,7 +56,12 @@ const User = {
             `;
             const values = [userId];
             const result = await connection.query(query, values);
-            return result.rows[0];
+            return {
+                userId: result.rows[0].user_id,
+                name: result.rows[0].name,
+                email: result.rows[0].email,
+                createdAt: result.rows[0].created_at
+            };
         } catch (error) {
             throw new Error(`Erro ao buscar usuario por id: ${error.message}`);
         }
@@ -81,7 +96,12 @@ const User = {
             values.unshift(userId);
 
             const result = await connection.query(query, values);
-            return result.rows[0];
+            return {
+                userId: result.rows[0].user_id,
+                name,
+                email,
+                createdAt: result.rows[0].created_at
+            };
 
         } catch (error) {
             throw new Error(`Erro ao atualizar usuario: ${error.message}`);
