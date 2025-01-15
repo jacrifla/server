@@ -3,6 +3,6 @@ const router = express.Router();
 const priceHistoryController = require('../controllers/priceHistory');
 
 router.post('/', priceHistoryController.createPriceHistory);
-router.get('/:item_id', priceHistoryController.getPriceHistory);
+router.get('/:itemId', priceHistoryController.getPriceHistory);
 
 module.exports = router;

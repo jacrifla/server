@@ -1,10 +1,10 @@
 const PriceHistoryModel = require('../models/priceHistory');
 
 exports.createPriceHistory = async (req, res) => {
-    const { item_id, unit_price, user_id } = req.body;
+    const { itemId, unitPrice, userId } = req.body;
 
     try {
-        const newHistory = await PriceHistoryModel.createPriceHistory({ item_id, unit_price, user_id });
+        const newHistory = await PriceHistoryModel.createPriceHistory({ itemId, unitPrice, userId });
         res.status(201).json({
             status: true,
             message: 'Histórico de preço criado com sucesso.',
@@ -13,17 +13,16 @@ exports.createPriceHistory = async (req, res) => {
     } catch (error) {
         res.status(500).json({
             status: false,
-            message: 'Erro ao criar histórico de preço.',
-            error: error.message
+            message: error.message
         });
     }
 };
 
 exports.getPriceHistory = async (req, res) => {
-    const { item_id } = req.params;
+    const { itemId } = req.params;
 
     try {
-        const history = await PriceHistoryModel.getPriceHistory(item_id);
+        const history = await PriceHistoryModel.getPriceHistory(itemId);
         res.status(200).json({
             status: true,
             data: history
@@ -31,8 +30,7 @@ exports.getPriceHistory = async (req, res) => {
     } catch (error) {
         res.status(500).json({
             status: false,
-            message: 'Erro ao buscar histórico de preços.',
-            error: error.message
+            message: error.message
         });
     }
 };
