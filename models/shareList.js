@@ -1,7 +1,7 @@
 const connection = require('../config/db');
 
 const SharedListModel = {
-    grantPermission: async ({listId, userId}) => {
+    grantPermission: async ({ listId, userId }) => {
         try {
             const query = `
                 INSERT INTO shared_list (list_id, user_id, permission)
@@ -10,12 +10,20 @@ const SharedListModel = {
             `;
             const values = [listId, userId];
             const { rows } = await connection.query(query, values);
-            return rows[0];
+            
+            const result = rows[0];
+            return {
+                sharedListId: result.shared_list_id,
+                listId: result.list_id,
+                userId: result.user_id,
+                permission: result.permission,
+                sharedAt: result.shared_at,
+            };
         } catch (error) {
-            throw new Error(`Error: ${error.message}`);
+            throw new Error(`${error.message}`);
         }
     },
-    
+
     getSharedLists: async (user_id) => {
         try {
             const query = `
@@ -23,9 +31,15 @@ const SharedListModel = {
                 WHERE user_id = $1;
             `;
             const { rows } = await connection.query(query, [user_id]);
-            return rows;
+            return rows.map((result) => ({
+                sharedListId: result.shared_list_id,
+                listId: result.list_id,
+                userId: result.user_id,
+                permission: result.permission,
+                sharedAt: result.shared_at,
+            }));
         } catch (error) {
-            throw new Error(`Error: ${error.message}`);
+            throw new Error(`${error.message}`);
         }
     },
 
@@ -37,9 +51,17 @@ const SharedListModel = {
                 RETURNING shared_list_id, list_id, user_id, permission, shared_at;
             `;
             const { rows } = await connection.query(query, [shared_list_id]);
-            return rows[0];
+
+            const result = rows[0];
+            return {
+                sharedListId: result.shared_list_id,
+                listId: result.list_id,
+                userId: result.user_id,
+                permission: result.permission,
+                sharedAt: result.shared_at,
+            };
         } catch (error) {
-            throw new Error(`Erro ao deletar o compartilhamento: ${error.message}`);
+            throw new Error(`${error.message}`);
         }
     },
 };
