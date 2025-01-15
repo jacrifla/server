@@ -10,9 +10,14 @@ const ShoppingList = {
             `;
             const values = [userId, listName];
             const result = await connection.query(query, values);
-            return result.rows[0];
+            const { list_id, list_name, created_at } = result.rows[0];
+            return {
+                listId: list_id,
+                listName: list_name,
+                createdAt: created_at,
+            };
         } catch (error) {
-            throw new Error(`Error: ${error.message}`);
+            throw new Error(`${error.message}`);
         }
     },
 
@@ -23,9 +28,14 @@ const ShoppingList = {
                 FROM shopping_lists;
             `;
             const result = await connection.query(query);
-            return result.rows;
+            return result.rows.map((row) => ({
+                listId: row.list_id,
+                listName: row.list_name,
+                createdAt: row.created_at,
+                completedAt: row.completed_at,
+            }));
         } catch (error) {
-            throw new Error(`Error: ${error.message}`);
+            throw new Error(`${error.message}`);
         }
     },
 
@@ -36,7 +46,8 @@ const ShoppingList = {
                     shopping_lists.list_id, 
                     shopping_lists.list_name, 
                     shopping_lists.created_at, 
-                    shopping_lists.completed_at, 
+                    shopping_lists.completed_at,
+                    shopping_lists.user_id, 
                     shared_list.user_id AS shared_user_id, 
                     shared_list.permission AS shared_permission,
                     shared_list.shared_at
@@ -49,9 +60,19 @@ const ShoppingList = {
             `;
             const values = [userId];
             const result = await connection.query(query, values);
-            return result.rows;
+                        
+            return result.rows.map((row) => ({
+                userId: row.user_id,
+                listId: row.list_id,
+                listName: row.list_name,
+                createdAt: row.created_at,
+                completedAt: row.completed_at,
+                sharedUserId: row.shared_user_id,
+                sharedPermission: row.shared_permission,
+                sharedAt: row.shared_at,
+            }));
         } catch (error) {
-            throw new Error(`Error: ${error.message}`);
+            throw new Error(`${error.message}`);
         }
     },
 
@@ -65,9 +86,13 @@ const ShoppingList = {
             `;
             const values = [listId, listName];
             const result = await connection.query(query, values);
-            return result.rows[0];
+            const { list_id, list_name } = result.rows[0];
+            return {
+                listId: list_id,
+                listName: list_name,
+            };
         } catch (error) {
-            throw new Error(`Error: ${error.message}`);
+            throw new Error(`${error.message}`);
         }
     },
 
@@ -82,7 +107,7 @@ const ShoppingList = {
             const result = await connection.query(query, values);
             return result.rowCount;
         } catch (error) {
-            throw new Error(`Error: ${error.message}`);
+            throw new Error(`${error.message}`);
         }
     },
 
@@ -96,9 +121,9 @@ const ShoppingList = {
             const result = await connection.query(query, values);
             return result.rowCount;
         } catch (error) {
-            throw new Error(`Error: ${error.message}`);
+            throw new Error(`${error.message}`);
         }
     },
-}
+};
 
 module.exports = ShoppingList;

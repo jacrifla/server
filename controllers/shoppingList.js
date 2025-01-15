@@ -21,8 +21,7 @@ exports.createList = async (req, res) => {
     } catch (error) {
         res.status(500).json({
             status: false,
-            message: 'Ocorreu um erro interno',
-            error: error.message
+            message: error.message,
         });
     }
 };
@@ -39,8 +38,7 @@ exports.findAllLists = async (req, res) => {
     } catch (error) {
         res.status(500).json({
             status: false,
-            message: 'Ocorreu um erro interno',
-            error: error.message
+            message: error.message,
         });
     }
 };
@@ -66,8 +64,7 @@ exports.findListsByUserId = async (req, res) => {
     } catch (error) {
         res.status(500).json({
             status: false,
-            message: 'Ocorreu um erro interno',
-            error: error.message
+            message: error.message,
         });
     }
 };
@@ -101,8 +98,7 @@ exports.updateList = async (req, res) => {
     } catch (error) {
         res.status(500).json({
             status: false,
-            message: 'Ocorreu um erro interno',
-            error: error.message
+            message: error.message,
         });
     }
 };
@@ -134,8 +130,7 @@ exports.markAsCompleted = async (req, res) => {
     } catch (error) {
         res.status(500).json({
             status: false,
-            message: 'Ocorreu um erro interno',
-            error: error.message
+            message: error.message,
         });
     }
 };
@@ -167,8 +162,7 @@ exports.deleteList = async (req, res) => {
     } catch (error) {
         res.status(500).json({
             status: false,
-            message: 'Ocorreu um erro interno',
-            error: error.message
-        })
+            message: error.message,
+        });
     }
 };
