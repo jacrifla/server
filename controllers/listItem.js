@@ -1,39 +1,39 @@
 const ListItemModel = require('../models/listItem');
 
 exports.createItem = async (req, res) => {
-    const { list_id, item_id, custom_product, quantity, unit_price } = req.body;
+    const { listId, itemId, customProduct, quantity, unitPrice } = req.body;
 
-    if (!list_id || !quantity) {
+    if (!listId || !quantity) {
         return res.status(400).json({
             status: false,
             message: 'Os campos ID da lista e a quantidade são obrigatórios.'
         });
     }
 
-    if (item_id && custom_product) {
+    if (itemId && customProduct) {
         return res.status(400).json({
             status: false,
-            message: 'Não é permitido fornecer item_id e custom_product juntos.'
+            message: 'Não é permitido fornecer itemId e customProduct juntos.'
         });
     }
 
-    if (!item_id && !custom_product) {
+    if (!itemId && !customProduct) {
         return res.status(400).json({
             status: false,
             message: 'Se ID do item não for fornecido, nome do produto é obrigatório.'
         });
     }
 
-    const item_type = item_id ? 'common' : 'custom';
+    const itemType = itemId ? 'common' : 'custom';
 
     try {
         const newItem = await ListItemModel.create({
-            list_id,
-            item_id: item_id || null,
-            custom_product: custom_product || null,
-            item_type,
+            listId,
+            itemId: itemId || null,
+            customProduct: customProduct || null,
+            itemType,
             quantity,
-            unit_price: unit_price || null
+            unitPrice: unitPrice || null
         });
         res.status(201).json({
             status: true,
@@ -43,17 +43,16 @@ exports.createItem = async (req, res) => {
     } catch (error) {
         res.status(500).json({
             status: false,
-            message: 'Erro ao criar o item.',
-            error: error.message
+            message: error.message
         });
     }
 };
 
 exports.updateItem = async (req, res) => {
-    const { list_item_id } = req.params;
-    const { quantity, unit_price, custom_product } = req.body;   
+    const { itemListId } = req.params;
+    const { quantity, unitPrice, customProduct } = req.body;
 
-    if (!list_item_id) {
+    if (!itemListId) {
         return res.status(400).json({
             status: false,
             message: 'ID do item é obrigatório.'
@@ -62,10 +61,10 @@ exports.updateItem = async (req, res) => {
 
     try {
         const updatedItem = await ListItemModel.update({
-            list_item_id,
+            itemListId,
             quantity,
-            unit_price,
-            custom_product
+            unitPrice,
+            customProduct
         });
 
         res.status(200).json({
@@ -76,15 +75,14 @@ exports.updateItem = async (req, res) => {
     } catch (error) {
         res.status(500).json({
             status: false,
-            message: 'Erro ao atualizar o item.',
-            error: error.message
+            message: error.message
         });
     }
 };
 
 exports.deleteItem = async (req, res) => {
     try {
-        const deletedItem = await ListItemModel.delete(req.params.listItemId);
+        const deletedItem = await ListItemModel.delete(req.params.itemListId);
         if (!deletedItem) {
             return res.status(404).json({
                 status: false,
@@ -98,8 +96,7 @@ exports.deleteItem = async (req, res) => {
     } catch (error) {
         res.status(500).json({
             status: false,
-            message: 'Erro ao excluir o item.',
-            error: error.message
+            message: error.message
         });
     }
 };
@@ -114,21 +111,31 @@ exports.getAllItems = async (req, res) => {
     } catch (error) {
         res.status(500).json({
             status: false,
-            message: 'Erro ao buscar itens.',
-            error: error.message
+            message: error.message
         });
     }
 };
 
-exports.getItemById = async (req, res) => {
+exports.getListById = async (req, res) => {
     try {
-        const item = await ListItemModel.getById(req.params.listItemId);
-        if (!item) {
+        const { listId } = req.params;
+
+        if (!listId) {
+            return res.status(400).json({
+                status: false,
+                message: 'ID da lista é obrigatório.'
+            });
+        };
+
+        const item = await ListItemModel.getByListId(listId);
+
+        if (!item.length) {
             return res.status(404).json({
                 status: false,
-                message: 'Item não encontrado.'
+                message: 'Nenhum item encontrado.'
             });
         }
+
         res.status(200).json({
             status: true,
             data: item
@@ -136,16 +143,15 @@ exports.getItemById = async (req, res) => {
     } catch (error) {
         res.status(500).json({
             status: false,
-            message: 'Erro ao buscar item.',
-            error: error.message
+            message: error.message
         });
     }
 };
 
 exports.markAsPurchased = async (req, res) => {
-    const { list_item_id } = req.params;
+    const { itemListId } = req.params;
 
-    if (!list_item_id) {
+    if (!itemListId) {
         return res.status(400).json({
             status: false,
             message: 'ID do item da lista é obrigatório.'
@@ -153,7 +159,7 @@ exports.markAsPurchased = async (req, res) => {
     }
 
     try {
-        const updatedItem = await ListItemModel.markAsPurchased(list_item_id);
+        const updatedItem = await ListItemModel.markAsPurchased(itemListId);
 
         res.status(200).json({
             status: true,
@@ -163,8 +169,7 @@ exports.markAsPurchased = async (req, res) => {
     } catch (error) {
         res.status(500).json({
             status: false,
-            message: 'Erro ao marcar o item como comprado.',
-            error: error.message
+            message: error.message
         });
     }
 };

@@ -4,9 +4,9 @@ const listItemsController = require('../controllers/listItem');
 
 router.post('/', listItemsController.createItem);
 router.get('/', listItemsController.getAllItems);
-router.get('/:listItemId', listItemsController.getItemById);
-router.put('/:list_item_id', listItemsController.updateItem);
-router.delete('/:listItemId', listItemsController.deleteItem);
-router.patch('/purchased/:list_item_id', listItemsController.markAsPurchased);
+router.get('/:listId', listItemsController.getListById);
+router.put('/:itemListId', listItemsController.updateItem);
+router.delete('/:itemListId', listItemsController.deleteItem);
+router.patch('/purchased/:itemListId', listItemsController.markAsPurchased);
 
 module.exports = router;
