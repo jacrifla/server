@@ -11,9 +11,15 @@ const SharedListToken = {
             const values = [listId, userId, token, expiresAt];
 
             const result = await connection.query(query, values);
-            return result.rows[0];
+            const row = result.rows[0];
+            return {
+                tokenId: row.token_id,
+                token: row.token,
+                expiresAt: row.expires_at,
+                createdAt: row.created_at,
+            };
         } catch (error) {
-            throw new Error(`Error: ${error.message}`);
+            throw new Error(`${error.message}`);
         }
     },
 
@@ -26,7 +32,7 @@ const SharedListToken = {
             const values = [token];
             await connection.query(query, values);
         } catch (error) {
-            throw new Error(`Error: ${error.message}`);
+            throw new Error(`${error.message}`);
         }
     },
 
@@ -65,9 +71,13 @@ const SharedListToken = {
             // Comparar hora atual com a expiração
             if (currentTime > expiresAt) {
                 return null;
-            }
+            }           
     
-            return tokenData;
+            return {
+                listId: tokenData.list_id,
+                userId: tokenData.user_id,
+                expiresAt: tokenData.expires_at,
+            };
         } catch (error) {
             throw new Error(`Erro ao encontrar o token: ${error.message}`);
         }
@@ -80,9 +90,14 @@ const SharedListToken = {
                 FROM shared_list_tokens;
             `;
             const result = await connection.query(query);
-            return result.rows;
+            return result.rows.map(row => ({
+                tokenId: row.token_id,
+                token: row.token,
+                expiresAt: row.expires_at,
+                createdAt: row.created_at,
+            }));
         } catch (error) {
-            throw new Error(`Error: ${error.message}`);
+            throw new Error(`${error.message}`);
         }
     },
 }

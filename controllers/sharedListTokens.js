@@ -3,14 +3,13 @@ const { DateTime } = require('luxon');
 const crypto = require('crypto');
 const SharedListModel = require('../models/shareList');
 
-
 exports.generateToken = async (req, res) => {
     const { listId, userId } = req.body;
 
     if (!listId || !userId) {
         return res.status(400).json({
             status: false,
-            message: 'listId e userId são obrigatórios.',
+            message: 'Faltando dados essenciais: listId e userId são obrigatórios.',
         });
     }
 
@@ -28,8 +27,7 @@ exports.generateToken = async (req, res) => {
     } catch (error) {
         res.status(500).json({
             status: false,
-            message: 'Erro ao gerar token.',
-            error: error.message,
+            message: error.message,
         });
     }
 };
@@ -55,8 +53,7 @@ exports.findToken = async (req, res) => {
     } catch (error) {
         res.status(500).json({
             status: false,
-            message: 'Erro ao verificar o token.',
-            error: error.message,
+            message: error.message,
         });
     }
 };
@@ -69,30 +66,28 @@ exports.revokeToken = async (req, res) => {
 
         res.status(200).json({
             status: true,
-            message: 'Compartilhamento revogado com sucesso!'
+            message: 'Compartilhamento revogado com sucesso!',
         });
     } catch (error) {
         res.status(500).json({
             status: false,
-            message: 'Erro ao revogar compartilhamento',
-            error: error.message
+            message: error.message,
         });
     }
 };
 
 exports.findAllToken = async (req, res) => {
     try {
-        const token = await SharedListToken.findAllToken();
+        const tokens = await SharedListToken.findAllToken();
         res.status(200).json({
             status: true,
-            message: 'Tokens listados com sucesso',
-            data: token
+            message: 'Tokens listados com sucesso.',
+            data: tokens,
         });
     } catch (error) {
         res.status(500).json({
             status: false,
-            message: 'Erro ao revogar compartilhamento',
-            error: error.message
+            message: error.message,
         });
     }
 };
@@ -111,10 +106,18 @@ exports.grantAccess = async (req, res) => {
         }
 
         // Pegar o ID da lista associado ao token
-        const { list_id: listId } = tokenData;
+        const { listId } = tokenData;
 
         // Conceder permissão
         const shareList = await SharedListModel.grantPermission({ listId, userId });
+
+        const formattedShareList = {
+            sharedListId: shareList.shared_list_id,
+            listId: shareList.list_id,
+            userId: shareList.user_id,
+            permission: shareList.permission,
+            sharedAt: shareList.shared_at,
+        };
 
         // Após conceder a permissão, apagar o token
         await SharedListToken.delete({ token });
@@ -122,7 +125,7 @@ exports.grantAccess = async (req, res) => {
         res.status(200).json({
             status: true,
             message: 'Permissão concedida com sucesso.',
-            data: shareList,
+            data: formattedShareList,
         });
     } catch (error) {
         if (error.message.includes('duplicate key value violates unique constraint')) {
@@ -130,12 +133,11 @@ exports.grantAccess = async (req, res) => {
                 status: false,
                 message: 'A lista já foi compartilhada com esse usuário.',
             });
-        };
+        }
 
         res.status(500).json({
             status: false,
-            message: 'Erro ao conceder permissão.',
-            error: error.message,
+            message: error.message,
         });
     }
 };
