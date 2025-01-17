@@ -96,16 +96,25 @@ const ShoppingList = {
         }
     },
 
-    markAsCompleted: async ({ listId }) => {
+    markAsCompleted: async ({ listId, totalAmount }) => {
         try {
             const query = `
                 UPDATE shopping_lists
-                SET completed_at = CURRENT_TIMESTAMP, status = $1, updated_at = CURRENT_TIMESTAMP
-                WHERE list_id = $2;
+                SET completed_at = CURRENT_TIMESTAMP, 
+                    status = $1, 
+                    updated_at = CURRENT_TIMESTAMP,
+                    total_amount = $2
+                WHERE list_id = $3
+                RETURNING list_id, status, total_amount, completed_at;
             `;
-            const values = ['completed', listId];
+            const values = ['completed', totalAmount, listId];
             const result = await connection.query(query, values);
-            return result.rowCount;
+            return {
+                listId: result.rows[0].list_id,
+                status: result.rows[0].status,
+                totalAmount: result.rows[0].total_amount,
+                completedAt: result.rows[0].completed_at,
+            };
         } catch (error) {
             throw new Error(`${error.message}`);
         }

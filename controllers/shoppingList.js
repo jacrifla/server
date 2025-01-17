@@ -104,17 +104,18 @@ exports.updateList = async (req, res) => {
 };
 
 exports.markAsCompleted = async (req, res) => {
-    const { listId } = req.params;    
+    const { listId } = req.params;
+    const { totalAmount } = req.body;   
     
-    if (!listId) {
+    if (!listId || totalAmount == null) {
         return res.status(400).json({
             status: false,
-            message: 'ID da lista é obrigatório'
+            message: 'ID da lista e total da lista são obrigatórios'
         });
     };
 
     try {
-        const mark = await ListModel.markAsCompleted({listId});
+        const mark = await ListModel.markAsCompleted({listId, totalAmount });
         
         if (!mark) {
             return res.status(404).json({
@@ -125,7 +126,8 @@ exports.markAsCompleted = async (req, res) => {
         
         res.status(200).json({
             status: true,
-            message: 'Marcada como concluída'
+            message: 'Marcada como concluída',
+            data: mark
         });
     } catch (error) {
         res.status(500).json({
