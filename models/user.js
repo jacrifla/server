@@ -38,7 +38,6 @@ const User = {
 
             const values = [email];
             const result = await connection.query(query, values);
-            console.log(result);
 
             return result.rows[0];
         } catch (error) {
@@ -224,7 +223,19 @@ const User = {
         }
     },
 
-
+    getAllUsers: async () => {
+        try {
+            const query = `
+                SELECT id as "userId", email, name, created_at as "createdAt", updated_at as "updatedAt", deleted_at as "deletedAt"
+                FROM users
+                WHERE deleted_at IS NULL;
+            `;
+            const result = await connection.query(query);
+            return result.rows;
+        } catch (error) {
+            throw new Error(`${error.message}`);
+        }
+    }
 }
 
 module.exports = User;
