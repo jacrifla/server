@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const listController = require('../controllers/shoppingList');
+const listController = require('../controllers/lists');
 
 router.post('/', listController.createList);
 router.get('/find-all', listController.findAllLists)
