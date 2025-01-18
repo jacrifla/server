@@ -1,22 +1,19 @@
 const connection = require('../config/db');
 
 const Category = {
-    create: async ({ categoryName }) => {
+    create: async ( categoryName ) => {
         try {
             const query = `
-                INSERT INTO categories (category_name)
+                INSERT INTO categories (name)
                 VALUES ($1)
-                RETURNING category_id, category_name;
+                RETURNING id as "categoryId", name as "categoryName";
             `;
             const values = [categoryName];
             const result = await connection.query(query, values);
-            const newCategory = {
-                categoryId: result.rows[0].category_id,
-                categoryName: result.rows[0].category_name
-            }
-            return newCategory;
+            
+            return result.rows[0];
         } catch (error) {
-            throw new Error(`Error: ${error.message}`);
+            throw new Error(`${error.message}`);
         }
     },
 
@@ -25,7 +22,7 @@ const Category = {
             const query = `
                 SELECT 1
                 FROM categories
-                WHERE category_id = $1;
+                WHERE id = $1;
             `
             const values = [categoryId];
             const result = await connection.query(query, values);
@@ -51,7 +48,7 @@ const Category = {
         }
     },
 
-    update: async ({ categoryId, categoryName }) => {
+    update: async ( categoryId, categoryName ) => {
         try {
             const exists = await Category.categoryExists(categoryId);
 
@@ -61,42 +58,42 @@ const Category = {
 
             const query = `
                 UPDATE categories
-                SET category_name = $2
-                WHERE category_id = $1
-                RETURNING category_id, category_name;
+                SET name = $2
+                WHERE id = $1
+                RETURNING id, name;
             `;
             const values = [categoryId, categoryName];
             const result = await connection.query(query, values);
             const updateCategory = {
-                categoryId: result.rows[0].category_id,
-                categoryName: result.rows[0].category_name
+                categoryId: result.rows[0].id,
+                categoryName: result.rows[0].name
             };
 
             return updateCategory;
         } catch (error) {
-            throw new Error(`Error: ${error.message}`);
+            throw new Error(`${error.message}`);
         }
     },
 
     findAll: async () => {
         try {
             const query = `
-                SELECT category_id, category_name
+                SELECT id, name
                 FROM categories
-                ORDER BY category_name ASC;
+                ORDER BY name ASC;
             `;
             const result = await connection.query(query);
             const categories = result.rows.map(category => ({
-                categoryId: category.category_id,
-                categoryName: category.category_name
+                categoryId: category.id,
+                categoryName: category.name
             }))
             return categories;
         } catch (error) {
-            throw new Error(`Error: ${error.message}`);
+            throw new Error(`${error.message}`);
         }
     },
 
-    delete: async ({ categoryId }) => {
+    delete: async ( categoryId ) => {
         try {
             const exists = await Category.categoryExists(categoryId);
 
@@ -108,12 +105,12 @@ const Category = {
 
             if (hasItems) {
                 throw new Error('Não é possível excluir a categoria, pois ela está associada a um ou mais itens.');
-            }
+            };
 
             const query = `
                 DELETE
                 FROM categories
-                WHERE category_id = $1;
+                WHERE id = $1;
             `
             const values = [categoryId];
             const result = await connection.query(query, values);

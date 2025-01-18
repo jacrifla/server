@@ -32,6 +32,21 @@ const Brand = {
         }
     },
 
+    itemExistsInBrand: async (brandId) => {
+        try {
+            const query = `
+                SELECT 1
+                FROM items
+                WHERE brand_id = $1;
+            `
+            const values = [brandId];
+            const result = await connection.query(query, values);
+            return result.rowCount > 0;
+        } catch (error) {
+            throw new Error(`${error.message}`);
+        }
+    },
+
     update: async ( brandId, brandName ) => {
         try {
             const exists = await Brand.brandExists(brandId);
@@ -76,6 +91,12 @@ const Brand = {
             if (!exists) {
                 throw new Error('Marca não encontrada.');
             }
+
+            const hasItems = await Brand.itemExistsInBrand(brandId);
+
+            if (hasItems) {
+                throw new Error('Não é possível excluir a marca, pois ela está associada a um ou mais itens.');
+            };
 
             const query = `
                 DELETE
