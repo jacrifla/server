@@ -1,21 +1,17 @@
 const connection = require('../config/db');
 
 const Brand = {
-    create: async ({ brandName }) => {
+    create: async ( brandName ) => {
         try {
             const query = `
-                INSERT INTO brands (brand_name)
+                INSERT INTO brands (name)
                 VALUES ($1)
-                RETURNING brand_id, brand_name;
+                RETURNING id as "brandId", name as "brandName";
             `;
             const values = [brandName];
             const result = await connection.query(query, values);
-            const newBrand = {
-                brandId: result.rows[0].brand_id,
-                brandName: result.rows[0].brand_name
-            };
-
-            return newBrand;
+            
+            return result.rows[0];
         } catch (error) {
             throw new Error(`${error.message}`);
         }
@@ -26,17 +22,17 @@ const Brand = {
             const query = `
                 SELECT 1
                 FROM brands
-                WHERE brand_id = $1;
+                WHERE id = $1;
             `
             const values = [brandId];
             const result = await connection.query(query, values);
             return result.rowCount > 0;
         } catch (error) {
-            throw new Error(`Não pode ser checado essa marca: ${error.message}`);
+            throw new Error(`${error.message}`);
         }
     },
 
-    update: async ({ brandId, brandName }) => {
+    update: async ( brandId, brandName ) => {
         try {
             const exists = await Brand.brandExists(brandId);
 
@@ -46,18 +42,13 @@ const Brand = {
 
             const query = `
                 UPDATE brands
-                SET brand_name = $2
-                WHERE brand_id = $1
-                RETURNING brand_id, brand_name;
+                SET name = $2
+                WHERE id = $1
+                RETURNING id as "brandId", name as "brandName";
             `;
             const values = [brandId, brandName];
             const result = await connection.query(query, values);
-            const updatedBrand = {
-                brandId: result.rows[0].brand_id,
-                brandName: result.rows[0].brand_name
-            };
-
-            return updatedBrand;
+            return result.rows[0];
         } catch (error) {
             throw new Error(`${error.message}`);
         }
@@ -66,22 +57,19 @@ const Brand = {
     findAll: async () => {
         try {
             const query = `
-                SELECT brand_id, brand_name
+                SELECT id as "brandId", name as "brandName"
                 FROM brands
-                ORDER BY brand_name ASC;
+                ORDER BY name ASC;
             `;
             const result = await connection.query(query);
-            const brands = result.rows.map(brand => ({
-                brandId: brand.brand_id,
-                brandName: brand.brand_name,
-            }))
-            return brands;
+            
+            return result.rows;
         } catch (error) {
             throw new Error(`${error.message}`);
         }
     },
 
-    delete: async ({ brandId }) => {
+    delete: async ( brandId ) => {
         try {
             const exists = await Brand.brandExists(brandId);
 
@@ -92,7 +80,7 @@ const Brand = {
             const query = `
                 DELETE
                 FROM brands
-                WHERE brand_id = $1;
+                WHERE id = $1;
             `;
             const values = [brandId];
             const result = await connection.query(query, values);
