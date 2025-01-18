@@ -3,117 +3,120 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
 const secretKey = process.env.SECRET_KEY;
-const saltRounds = 10;
+const SALT_ROUND = 10;
 
 const User = {
-    create: async ({ name, email, password }) => {
+    createUser: async (name, email, password) => {
         try {
-            const hashedPassword = await bcrypt.hash(password, saltRounds);
+            const hashedPassword = await bcrypt.hash(password, SALT_ROUND);
             const query = `
                 INSERT INTO users (name, email, password, created_at)
                 VALUES ($1, $2, $3, CURRENT_TIMESTAMP)
-                RETURNING user_id, name, email, created_at;
+                RETURNING id as "userId", name, email, created_at as "createdAt";
             `
-            const values = [name, email, hashedPassword];
+            const values = [name, email.toLowerCase(), hashedPassword];
             const result = await connection.query(query, values);
-            return {
-                userId: result.rows[0].user_id,
-                name,
-                email,
-                createdAt: result.rows[0].created_at
-            };
+            return result.rows[0];
         } catch (error) {
-            throw new Error(`Erro ao criar usuario: ${error.message}`);
+            throw new Error(`${error.message}`);
         }
     },
 
-    findByEmail: async ({ email }) => {
+    findByEmail: async (email) => {
+
         try {
             const query = `
-                SELECT user_id, email, name, created_at
+                SELECT 
+                    id as "userId", 
+                    email, name, 
+                    created_at as "createdAt",
+                    deleted_at as "deletedAt"
                 FROM users
-                WHERE email = $1 AND deleted_at IS NULL;
+                WHERE LOWER(email) = LOWER($1)
+                AND deleted_at IS NULL;
             `;
+
             const values = [email];
             const result = await connection.query(query, values);
-            return {
-                userId: result.rows[0].user_id,
-                name: result.rows[0].name,
-                email,
-                createdAt: result.rows[0].created_at
-            };
+            console.log(result);
+
+            return result.rows[0];
         } catch (error) {
-            throw new Error(`Erro ao buscar usuario por email: ${error.message}`);
+            throw new Error(`${error.message}`);
         }
     },
 
-    findById: async ({ userId }) => {
+    findById: async (userId) => {
         try {
             const query = `
-                SELECT user_id, email, name, created_at
+                SELECT id as "userId", email, name, created_at as "createdAt"
                 FROM users
-                WHERE user_id = $1 AND deleted_at IS NULL;
+                WHERE id = $1 AND deleted_at IS NULL;
             `;
             const values = [userId];
             const result = await connection.query(query, values);
-            return {
-                userId: result.rows[0].user_id,
-                name: result.rows[0].name,
-                email: result.rows[0].email,
-                createdAt: result.rows[0].created_at
-            };
+            return result.rows[0];
+
         } catch (error) {
-            throw new Error(`Erro ao buscar usuario por id: ${error.message}`);
+            throw new Error(`${error.message}`);
         }
     },
 
-    update: async ({ userId, name, email }) => {
+    update: async (userId, name, email) => {
         try {
             const fields = [];
             const values = [];
+            let updateQuery = false;
 
-            if (name) {
-                fields.push('name = $2');
-                values.push(name);
-            };
+            if (name !== null) {
+                const user = await connection.query('SELECT name FROM users WHERE id = $1', [userId]);
+                if (user.rows[0].name !== name) {
+                    fields.push('name = $2');
+                    values.push(name);
+                    updateQuery = true;
+                }
+            }
 
-            if (email) {
-                fields.push('email = $3');
-                values.push(email);
-            };
+            if (email !== null) {
+                const user = await connection.query('SELECT email FROM users WHERE id = $1', [userId]);
+                if (user.rows[0].email !== email.toLowerCase()) {
+                    fields.push('email = $3');
+                    values.push(email.toLowerCase());
+                    updateQuery = true;
+                }
+            }
 
-            if (fields.length === 0) {
-                throw new Error('Nenhum dado para atualizar');
-            };
+            if (updateQuery) {
+                fields.push('updated_at = CURRENT_TIMESTAMP');
+            }
+
+            if (!updateQuery) {
+                throw new Error('Nenhuma alteração foi feita.');
+            }
 
             const query = `
                 UPDATE users
                 SET ${fields.join(', ')}
-                WHERE user_id = $1
-                RETURNING user_id, name, email, created_at;
+                WHERE id = $1
+                RETURNING id as "userId", name, email, created_at as "createdAt", updated_at as "updatedAt";
             `;
 
             values.unshift(userId);
 
             const result = await connection.query(query, values);
-            return {
-                userId: result.rows[0].user_id,
-                name,
-                email,
-                createdAt: result.rows[0].created_at
-            };
+            return result.rows[0];
 
         } catch (error) {
-            throw new Error(`Erro ao atualizar usuario: ${error.message}`);
+            throw new Error(`${error.message}`);
         }
     },
 
-    delete: async ({ userId }) => {
+    delete: async (userId) => {
         try {
             const query = `
                 UPDATE users
                 SET deleted_at = CURRENT_TIMESTAMP
-                WHERE user_id = $1 AND deleted_at IS NULL;
+                WHERE id = $1 AND deleted_at IS NULL;
             `
 
             const values = [userId];
@@ -121,11 +124,11 @@ const User = {
 
             return result.rowCount;
         } catch (error) {
-            throw new Error(`Erro ao deletar usuario: ${error.message}`);
+            throw new Error(`${error.message}`);
         }
     },
 
-    restore: async ({ email }) => {
+    restore: async (email) => {
         try {
             const query = `
                 UPDATE users
@@ -136,11 +139,11 @@ const User = {
             const result = await connection.query(query, values);
             return result.rowCount;
         } catch (error) {
-            throw new Error(`Erro ao restaurar usuario: ${error.message}`);
+            throw new Error(`${error.message}`);
         }
     },
 
-    verifyPassword: async ({password, storedPassword}) => {
+    verifyPassword: async (password, storedPassword) => {
         try {
             const isMatch = await bcrypt.compare(password, storedPassword);
             if (!isMatch) {
@@ -148,20 +151,20 @@ const User = {
             };
             return isMatch;
         } catch (error) {
-            throw new Error(`Erro: ${error.message}`); 
+            throw new Error(`${error.message}`);
         }
     },
 
-    generateToken: ({userId}) => {
+    generateToken: (userId) => {
         const payload = { userId };
         const token = jwt.sign(payload, secretKey, { expiresIn: '7d' });
         return token;
     },
 
-    login: async ({email, password}) => {
+    login: async (email, password) => {
         try {
             const query = `
-                SELECT user_id, name, email, password
+                SELECT id as "userId", name, email, password
                 FROM users
                 WHERE email = $1 AND deleted_at IS NULL;
             `;
@@ -173,18 +176,18 @@ const User = {
             }
 
             const user = result.rows[0];
-            await User.verifyPassword({ password, storedPassword: user.password });
+            await User.verifyPassword( password, user.password );
 
             delete user.password;
 
             const token = User.generateToken(user.user_id);
             return { user, token };
         } catch (error) {
-            throw new Error(`Erro ao logar: ${error.message}`); 
+            throw new Error(`${error.message}`);
         }
     },
 
-    resetPassword: async ({ email, newPassword }) => {
+    resetPassword: async (email, newPassword) => {
         try {
             const getPassword = `
                 SELECT password
@@ -205,7 +208,7 @@ const User = {
                 throw new Error('Nova senha não pode ser a mesma que a anterior');
             }
 
-            const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
+            const hashedPassword = await bcrypt.hash(newPassword, SALT_ROUND);
 
             const updatePassword = `
                 UPDATE users
@@ -217,7 +220,7 @@ const User = {
 
             return resultUpdate.rowCount;
         } catch (error) {
-            throw new Error(`Erro ao resetar senha do usuario: ${error.message}`);
+            throw new Error(`${error.message}`);
         }
     },
 

@@ -19,16 +19,23 @@ exports.createUser = async (req, res) => {
             });
         };
 
-        const userExists = await UserModel.findByEmail({email});
+        if (password.length < 6) {
+            return res.status(400).json({
+                status: false,
+                message: 'A senha precisa ter no mínimo 6 caracteres'
+            })
+        }
 
-        if (userExists) {
+        const userExists = await UserModel.findByEmail(email);        
+
+        if (userExists && !userExists.deletedAt) {
             return res.status(400).json({
                 status: false,
                 message: 'Já existe um usuário com este email'
             });
         };
 
-        const newUser = await UserModel.create({name, email, password});
+        const newUser = await UserModel.createUser(name, email, password);
         res.status(201).json({
             status: true,
             message: 'Usuário criado com sucesso',
@@ -38,8 +45,7 @@ exports.createUser = async (req, res) => {
     } catch (error) {
         res.status(500).json({
             status: false,
-            message: 'Ocorreu um erro interno',
-            error: error.message
+            message: error.message,
         })
     }
 };
@@ -54,7 +60,7 @@ exports.findByEmail = async (req, res) => {
             });
         };
 
-        const user = await UserModel.findByEmail({email});
+        const user = await UserModel.findByEmail(email);
         if (!user) {
             return res.status(404).json({
                 status: false,
@@ -69,8 +75,7 @@ exports.findByEmail = async (req, res) => {
     } catch (error) {
         res.status(500).json({
             status: false,
-            message: 'Ocorreu um erro interno',
-            error: error.message
+            message: error.message,
         });
     }
 };
@@ -86,7 +91,7 @@ exports.findById = async (req, res) => {
             });
         };
 
-        const user = await UserModel.findById({userId});
+        const user = await UserModel.findById(userId);
         
         if (!user) {
             return res.status(404).json({
@@ -103,8 +108,7 @@ exports.findById = async (req, res) => {
     } catch (error) {
         res.status(500).json({
             status: false,
-            message: 'Ocorreu um erro interno',
-            error: error.message
+            message: error.message,
         });
     }
 };
@@ -115,20 +119,20 @@ exports.updateUser = async (req, res) => {
 
     try {
         if (!userId) {
-            res.status(400).json({
+            return res.status(400).json({
                 status: false,
                 message: 'O ID é necessário'
             });
         };
 
         if (!name && !email) {
-            res.status(400).json({
+            return res.status(400).json({
                 status: false,
                 message: 'O nome ou email é necessário'
             });
         };
 
-        const updatedUser = await UserModel.update({userId, name, email});
+        const updatedUser = await UserModel.update(userId, name, email);
         
         if (!updatedUser) {
             return res.status(404).json({
@@ -145,8 +149,7 @@ exports.updateUser = async (req, res) => {
     } catch (error) {
         res.status(500).json({
             status: false,
-            message: 'Ocorreu um erro interno',
-            error: error.message
+            message: error.message,
         }); 
     }
 };
@@ -162,7 +165,7 @@ exports.deleteUser = async (req, res) => {
             });
         };
 
-        const deletedUser = await UserModel.delete({userId});
+        const deletedUser = await UserModel.delete(userId);
         
         if (!deletedUser) {
             return res.status(404).json({
@@ -178,8 +181,7 @@ exports.deleteUser = async (req, res) => {
     } catch (error) {
         res.status(500).json({
             status: false,
-            message: 'Ocorreu um erro interno',
-            error: error.message
+            message: error.message
         });
     }
 };
@@ -195,7 +197,7 @@ exports.restoreUser = async (req, res) => {
             });
         };
 
-        const restoredUser = await UserModel.restore({email});
+        const restoredUser = await UserModel.restore(email);
         
         if (!restoredUser) {
             return res.status(404).json({
@@ -211,8 +213,7 @@ exports.restoreUser = async (req, res) => {
     } catch (error) {
         res.status(500).json({
             status: false,
-            message: 'Ocorreu um erro interno',
-            error: error.message
+            message: error.message
         });
     }
 };
@@ -227,9 +228,16 @@ exports.resetPasswordUser = async (req, res) => {
             });
         };
 
-        const resetPassword = await UserModel.resetPassword({email, newPassword});
+        if (newPassword.length < 6) {
+            return res.status(400).json({
+                status: false,
+                message: 'A nova senha deve ter pelo menos 6 caracteres'
+            });
+        }
 
-        if (!resetPassword) {
+        const resetPassword = await UserModel.resetPassword(email, newPassword);
+
+        if (resetPassword === 0) {
             return res.status(404).json({
                 status: false,
                 message: 'Usuário não encontrado ou senha resetada'
@@ -243,8 +251,7 @@ exports.resetPasswordUser = async (req, res) => {
     } catch (error) {
         res.status(500).json({
             status: false,
-            message: 'Ocorreu um erro interno',
-            error: error.message
+            message: error.message
         });
     }
 };
@@ -259,7 +266,7 @@ exports.loginUser = async (req, res) => {
             });
         };
 
-        const login = await UserModel.login({email, password});
+        const login = await UserModel.login(email, password);
         
         if (!login) {
             return res.status(401).json({
@@ -276,8 +283,7 @@ exports.loginUser = async (req, res) => {
     } catch (error) {
         res.status(500).json({
             status: false,
-            message: 'Ocorreu um erro interno',
-            error: error.message
+            message: error.message
         });
     }
 };
