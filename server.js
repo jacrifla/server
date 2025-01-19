@@ -5,6 +5,8 @@ const app = express();
 const configureServer = require('./config/serverConfig');
 const configureRoutes = require('./config/routeConfig');
 
+require('./cron/tokenCleanup'); 
+
 configureServer(app);
 configureRoutes(app);
 
