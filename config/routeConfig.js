@@ -2,20 +2,18 @@ const userRoutes = require('../routes/user');
 const brandRoutes = require('../routes/brand');
 const categoryRoutes = require('../routes/category');
 const itemRoutes = require('../routes/items');
-const listRoutes = require('../routes/shoppingList');
+const listRoutes = require('../routes/lists');
 const listItemRoutes = require('../routes/listItem');
-const priceHistoryRoutes = require('../routes/priceHistory');
-const itemNotesRoutes = require('../routes/itemNotes');
-const sharedListTokensRoutes = require('../routes/sharedListTokens');
+const priceHistoryRoutes = require('../routes/purchases');
+const sharedListRoutes = require('../routes/share');
 
 module.exports = (app) => {
     app.use('/user', userRoutes);
     app.use('/brand', brandRoutes);
     app.use('/category', categoryRoutes);
     app.use('/items', itemRoutes);
-    app.use('/shopping-list', listRoutes);
+    app.use('/list', listRoutes);
     app.use('/list-item', listItemRoutes);
-    app.use('/price-history', priceHistoryRoutes);
-    app.use('/item-notes', itemNotesRoutes);
-    app.use('/shared-list-tokens', sharedListTokensRoutes);
+    app.use('/purchase', priceHistoryRoutes);
+    app.use('/shared-list-tokens', sharedListRoutes);
 }
