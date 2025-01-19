@@ -1,175 +1,127 @@
 const ListItemModel = require('../models/listItem');
+const { createItem } = require('../models/items');
+const { createPurchase } = require('../models/purchases');
+const { isValidBarcode } = require('../utils/validation');
 
-exports.createItem = async (req, res) => {
-    const { listId, itemId, customProduct, quantity, unitPrice } = req.body;
+const ListItemController = {
+    createItem: async (req, res) => {
+        try {
+            const itemData = req.body;
 
-    if (!listId || !quantity) {
-        return res.status(400).json({
-            status: false,
-            message: 'Os campos ID da lista e a quantidade são obrigatórios.'
-        });
-    }
+            if (!itemData.listId) {
+                return res.status(400).json({
+                    status: false,
+                    message: "O campo 'listId' é obrigatório.",
+                });
+            }
 
-    if (itemId && customProduct) {
-        return res.status(400).json({
-            status: false,
-            message: 'Não é permitido fornecer itemId e customProduct juntos.'
-        });
-    }
+            const newItem = await ListItemModel.create(itemData);
 
-    if (!itemId && !customProduct) {
-        return res.status(400).json({
-            status: false,
-            message: 'Se ID do item não for fornecido, nome do produto é obrigatório.'
-        });
-    }
-
-    const itemType = itemId ? 'common' : 'custom';
-
-    try {
-        const newItem = await ListItemModel.create({
-            listId,
-            itemId: itemId || null,
-            customProduct: customProduct || null,
-            itemType,
-            quantity,
-            unitPrice: unitPrice || null
-        });
-        res.status(201).json({
-            status: true,
-            message: 'Item criado com sucesso.',
-            data: newItem
-        });
-    } catch (error) {
-        res.status(500).json({
-            status: false,
-            message: error.message
-        });
-    }
-};
-
-exports.updateItem = async (req, res) => {
-    const { itemListId } = req.params;
-    const { quantity, unitPrice, customProduct } = req.body;
-
-    if (!itemListId) {
-        return res.status(400).json({
-            status: false,
-            message: 'ID do item é obrigatório.'
-        });
-    }
-
-    try {
-        const updatedItem = await ListItemModel.update({
-            itemListId,
-            quantity,
-            unitPrice,
-            customProduct
-        });
-
-        res.status(200).json({
-            status: true,
-            message: 'Item atualizado com sucesso.',
-            data: updatedItem
-        });
-    } catch (error) {
-        res.status(500).json({
-            status: false,
-            message: error.message
-        });
-    }
-};
-
-exports.deleteItem = async (req, res) => {
-    try {
-        const deletedItem = await ListItemModel.delete(req.params.itemListId);
-        if (!deletedItem) {
-            return res.status(404).json({
+            res.status(201).json({
+                status: true,
+                message: 'Item criado com sucesso',
+                data: newItem,
+            });
+        } catch (error) {
+            res.status(500).json({
                 status: false,
-                message: 'Item não encontrado para exclusão.'
+                message: error.message,
             });
         }
-        res.status(200).json({
-            status: true,
-            message: 'Item excluído com sucesso.'
-        });
-    } catch (error) {
-        res.status(500).json({
-            status: false,
-            message: error.message
-        });
-    }
-};
+    },
 
-exports.getAllItems = async (req, res) => {
-    try {
-        const items = await ListItemModel.getAll();
-        res.status(200).json({
-            status: true,
-            data: items
-        });
-    } catch (error) {
-        res.status(500).json({
-            status: false,
-            message: error.message
-        });
-    }
-};
-
-exports.getListById = async (req, res) => {
-    try {
+    getItemsByListId: async (req, res) => {
         const { listId } = req.params;
 
-        if (!listId) {
-            return res.status(400).json({
-                status: false,
-                message: 'ID da lista é obrigatório.'
+        try {
+            const items = await ListItemModel.findByListId(listId);
+            res.status(200).json({
+                status: true,
+                data: items,
             });
-        };
-
-        const item = await ListItemModel.getByListId(listId);
-
-        if (!item.length) {
-            return res.status(404).json({
+        } catch (error) {
+            res.status(500).json({
                 status: false,
-                message: 'Nenhum item encontrado.'
+                message: error.message,
             });
         }
+    },
 
-        res.status(200).json({
-            status: true,
-            data: item
-        });
-    } catch (error) {
-        res.status(500).json({
-            status: false,
-            message: error.message
-        });
-    }
+    updateItem: async (req, res) => {
+        const { itemListId } = req.params;
+        const itemData = req.body;
+
+        try {
+            const updatedItem = await ListItemModel.update(itemListId, itemData);
+            res.status(200).json({
+                status: true,
+                message: 'Item atualizado com sucesso',
+                data: updatedItem,
+            });
+        } catch (error) {
+            res.status(500).json({
+                status: false,
+                message: error.message,
+            });
+        }
+    },
+
+    deleteItem: async (req, res) => {
+        const { itemListId } = req.params;
+
+        try {
+            const deletedItem = await ListItemModel.delete(itemListId);
+            res.status(200).json({
+                status: true,
+                message: 'Item deletado com sucesso',
+                data: deletedItem,
+            });
+        } catch (error) {
+            res.status(500).json({
+                status: false,
+                message: error.message,
+            });
+        }
+    },
+
+    markAsPurchased: async (req, res) => {
+        const { itemListId, userId, categoryId = null, brandId = null, barcode = null } = req.body;
+
+        try {
+            const itemDetails = await ListItemModel.getItemDetails(itemListId);
+    
+            const { itemType, itemName, quantity, price } = itemDetails;
+            console.log('itemType: ', itemType);
+
+            if (itemType === 'custom' && barcode) {
+                if (!isValidBarcode(barcode)) {
+                    return res.status(400).json({
+                        status: false,
+                        message: 'Barcode inválido.',
+                    });
+                }
+            }
+            
+            if (itemType === 'common') {
+                const total = price * quantity;
+                await createPurchase(itemListId, userId, quantity, price, total);
+            } else if (itemType === 'custom') {
+                const newItem = await createItem(itemName, categoryId, brandId, barcode);
+                const total = price * quantity;
+                await createPurchase(newItem.itemId, userId, quantity, price, total);
+            }
+    
+            res.status(200).json({
+                status: true,
+                message: 'Compra realizada com sucesso!',
+            });
+        } catch (error) {
+            res.status(500).json({
+                status: false,
+                message: error.message,
+            });
+        }
+    },
 };
 
-exports.markAsPurchased = async (req, res) => {
-    const { itemListId } = req.params;
-
-    if (!itemListId) {
-        return res.status(400).json({
-            status: false,
-            message: 'ID do item da lista é obrigatório.'
-        });
-    }
-
-    try {
-        const updatedItem = await ListItemModel.markAsPurchased(itemListId);
-
-        res.status(200).json({
-            status: true,
-            message: 'Item marcado como comprado com sucesso.',
-            data: updatedItem
-        });
-    } catch (error) {
-        res.status(500).json({
-            status: false,
-            message: error.message
-        });
-    }
-};
+module.exports = ListItemController;

@@ -1,231 +1,152 @@
 const connection = require('../config/db');
 
 const ListItem = {
-    create: async ({ listId, itemId = null, customProduct = null, itemType, quantity, unitPrice = null }) => {
+    create: async (itemData) => {
         try {
-            const query = `
-                INSERT INTO shopping_list_items 
-                (list_id, item_id, custom_product, item_type, quantity, unit_price)
-                VALUES ($1, $2, $3, $4, $5, $6)
-                RETURNING *;
-            `;
-            const values = [listId, itemId, customProduct, itemType, quantity, unitPrice];
-            const result = await connection.query(query, values);
+            let itemName = itemData.itemName;
 
-            return {
-                itemListId: result.rows[0].list_item_id,
-                listId: result.rows[0].list_id,
-                itemId: result.rows[0].item_id,
-                customProduct: result.rows[0].custom_product,
-                itemType: result.rows[0].item_type,
-                quantity: parseFloat(result.rows[0].quantity),
-                unitPrice: parseFloat(result.rows[0].unit_price),
-            };
+            if (itemData.itemId) {
+                const queryItemName = `
+                    SELECT name 
+                    FROM items 
+                    WHERE id = $1;
+                `;
+                const result = await connection.query(queryItemName, [itemData.itemId]);
+                if (result.rowCount === 0) {
+                    throw new Error('Item não encontrado no banco de dados');
+                }
+                itemName = result.rows[0].name;
+            }
+
+            const insertQuery = `
+                INSERT INTO list_items (list_id, item_id, item_name, item_type, quantity, price)
+                VALUES ($1, $2, $3, $4, $5, $6)
+                RETURNING 
+                    id AS "itemListId",
+                    list_id AS "listId",
+                    item_id AS "itemId",
+                    item_name AS "itemName",
+                    item_type AS "itemType",
+                    quantity::float AS "quantity",
+                    price::float AS "price",
+                    created_at AS "createdAt";
+            `;
+
+            const values = [
+                itemData.listId,
+                itemData.itemId || null,
+                itemName,
+                itemData.itemId ? 'common' : 'custom',
+                itemData.quantity,
+                itemData.price,
+            ];
+
+            const listItemResult = await connection.query(insertQuery, values);
+
+            return listItemResult.rows[0];
         } catch (error) {
-            throw new Error(`${error.message}`);
+            throw new Error(error.message);
         }
     },
 
-    update: async ({ itemListId, quantity, unitPrice, customProduct }) => {
+    findByListId: async (listId) => {
         try {
-            const checkItemTypeQuery = `
-                SELECT item_type 
-                FROM shopping_list_items 
-                WHERE list_item_id = $1;
-            `;
-            const { rows } = await connection.query(checkItemTypeQuery, [itemListId]);
-
-            let itemType;
-            let customName = customProduct;
-
-            if (rows.length === 0) {
-                itemType = 'custom';
-            } else {
-                itemType = rows[0].item_type;
-                if (itemType === 'common' && customProduct) {
-                    throw new Error('Não é permitido alterar o nome para itens do tipo "common".');
-                }
-                if (itemType === 'custom' && customProduct) {
-                    customName = customProduct;
-                }
-            }
-            const updates = [];
-            const values = [];
-
-            if (quantity) {
-                updates.push(`quantity = $${updates.length + 1}`);
-                values.push(quantity);
-            }
-            if (unitPrice) {
-                updates.push(`unit_price = $${updates.length + 1}`);
-                values.push(unitPrice);
-            }
-            if (customProduct && itemType === 'custom') {
-                updates.push(`custom_product = $${updates.length + 1}`);
-                values.push(customProduct);
-            }
-
-            if (updates.length === 0) {
-                throw new Error('Nenhum campo válido para atualizar.');
-            }
-
             const query = `
-                UPDATE shopping_list_items
-                SET ${updates.join(', ')}
-                WHERE list_item_id = $${updates.length + 1}
-                RETURNING *;
+                SELECT 
+                    li.id as "itemListId", 
+                    li.list_id as "listId", 
+                    li.item_id as "itemId", 
+                    li.item_name as "itemName", 
+                    li.item_type as "itemType", 
+                    li.quantity::float as "quantity", 
+                    li.price::float as "price", 
+                    li.created_at as "createdAt"
+                FROM list_items li
+                WHERE li.list_id = $1;
             `;
-            values.push(itemListId);
-
-            const result = await connection.query(query, values);
-
-            return {
-                itemListId: result.rows[0].list_item_id,
-                listId: result.rows[0].list_id,
-                itemId: result.rows[0].item_id || null,
-                quantity: parseFloat(result.rows[0].quantity),
-                unitPrice: parseFloat(result.rows[0].unit_price),
-                customProduct: result.rows[0].custom_product || null,
-                itemType: result.rows[0].item_type,
-                status: result.rows[0].status
-            };
+            const result = await connection.query(query, [listId]);
+            return result.rows;
         } catch (error) {
-            throw new Error(`${error.message}`);
+            throw new Error(error.message);
+        }
+    },
+
+    update: async (itemListId, itemData) => {
+        try {
+            let updateQuery = `
+                UPDATE list_items 
+                SET 
+                    quantity = $2, 
+                    price = $3
+                    ${itemData.itemName ? ", item_name = $4" : ""}
+                WHERE id = $1
+                RETURNING id as "itemListId", 
+                    list_id AS "listId", 
+                    item_id AS "itemId", 
+                    item_name AS "itemName", 
+                    item_type AS "itemType", 
+                    quantity::float, price::float, 
+                    created_at AS "createdAt";
+            `;
+
+            const values = [itemListId, itemData.quantity, itemData.price];
+
+            if (itemData.itemName) {
+                values.push(itemData.itemName);
+            }
+
+            const updateResult = await connection.query(updateQuery, values);
+            return updateResult.rows[0];
+        } catch (error) {
+            throw new Error(error.message);
         }
     },
 
     delete: async (itemListId) => {
         try {
-            const query = `
-                DELETE FROM shopping_list_items
-                WHERE list_item_id = $1
-                RETURNING list_item_id;
+            const deleteQuery = `
+                DELETE FROM list_items
+                WHERE id = $1
+                RETURNING id AS "itemListId", list_id AS "listId";
             `;
-            const result = await connection.query(query, [itemListId]);
-    
-            if (result.rows.length === 0) {
-                throw new Error('Item não encontrado.');
+            const result = await connection.query(deleteQuery, [itemListId]);
+            if (result.rowCount === 0) {
+                throw new Error('Item não encontrado');
             }
-    
-            return {
-                status: 'success',
-                message: 'Deletado com sucesso.',
-            };
+            return result.rows[0];
         } catch (error) {
-            throw new Error(`${error.message}`);
-        }
-    },    
-
-    getAll: async () => {
-        try {
-            const query = `
-                SELECT 
-                    sli.list_id,
-                    sli.list_item_id,
-                    sli.item_id,
-                    sli.custom_product,
-                    sli.item_type,
-                    sli.quantity,
-                    sli.unit_price,
-                    sli.status,
-                    i.product_name
-                FROM shopping_list_items sli
-                LEFT JOIN items i ON sli.item_id = i.item_id;
-            `;
-            const result = await connection.query(query);
-
-            return result.rows.map((row) => ({
-                itemListId: row.list_item_id,
-                listId: row.list_id,
-                itemId: row.item_id || null,
-                customProduct: row.custom_product || null,
-                itemType: row.item_type,
-                quantity: parseFloat(row.quantity),
-                unitPrice: parseFloat(row.unit_price),
-                status: row.status,
-                productName: row.product_name || null
-            }));
-        } catch (error) {
-            throw new Error(`${error.message}`);
+            throw new Error(error.message);
         }
     },
 
-    getByListId: async (listId) => {
-        try {
-            const query = `
-                SELECT
-                    sli.list_item_id,
-                    sli.item_type,
-                    sli.quantity,
-                    sli.unit_price,
-                    sli.custom_product,
-                    i.item_id AS itemId,
-                    i.product_name AS itemName
-                FROM shopping_list_items sli
-                LEFT JOIN items i ON sli.item_type = 'common' AND sli.item_id = i.item_id
-                WHERE sli.list_id = $1;
-            `;
-            const values = [listId];
-            const result = await connection.query(query, values);
-            console.log(result.rows);
-            
-    
-            return result.rows
-                .map((row) => {
-                    const quantity = parseFloat(row.quantity) || null;
-                    const price = parseFloat(row.unit_price) || null;
-    
-                    return {
-                        itemListId: row.list_item_id,
-                        itemName: row.item_type === 'common' ? row.itemname || null : null,
-                        type: row.item_type || null,
-                        quantity: quantity,
-                        price: price,
-                        customName: row.item_type === 'custom' ? row.custom_product || null : null,
-                    };
-                })
-                .filter(item => item !== null);
-    
-        } catch (error) {
-            throw new Error(`${error.message}`);
-        }
+    verifyType: async (itemId) => {
+        const query = `
+            SELECT item_type AS "itemType"
+            FROM list_items
+            WHERE item_id = $1;
+        `;
+
+        const values = [itemId];
+        const result = await connection.query(query, values);
+        return result.rows[0].itemType;
     },
-    
 
-    markAsPurchased: async (itemListId) => {
-        try {
-            const checkItemQuery = `
-                SELECT status
-                FROM shopping_list_items 
-                WHERE list_item_id = $1;
-            `;
-            const { rows } = await connection.query(checkItemQuery, [itemListId]);
-
-            if (rows.length === 0) {
-                throw new Error('Item não encontrado.');
-            }
-
-            if (rows[0].status === 'purchased') {
-                throw new Error('O item já foi marcado como comprado.');
-            }
-
-            const updateQuery = `
-                UPDATE shopping_list_items
-                SET status = 'purchased'
-                WHERE list_item_id = $1
-                RETURNING *;
-            `;
-
-            const result = await connection.query(updateQuery, [itemListId]);
-
-            return {
-                itemListId: result.rows[0].list_item_id,
-                status: result.rows[0].status,
-            };
-        } catch (error) {
-            throw new Error(`${error.message}`);
-        }
-    }
+    getItemDetails: async (itemListId) => {
+        const query = `
+            SELECT 
+                li.id AS "itemListId",
+                li.item_name AS "itemName",
+                li.quantity,
+                li.price,
+                li.item_type AS "itemType",
+                li.list_id AS "listId"
+            FROM list_items li
+            WHERE li.id = $1;
+        `;
+        const values = [itemListId];
+        const result = await connection.query(query, values);
+        return result.rows[0];
+    },
 };
 
 module.exports = ListItem;
