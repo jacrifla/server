@@ -14,7 +14,7 @@ const Items = {
                     barcode,
                     created_at as "createdAt";
             `;
-            const values = [name, categoryId, brandId, barcode];
+            const values = [name, categoryId ?? null, brandId ?? null, barcode];
             const result = await connection.query(query, values);
             return result.rows[0];
         } catch (error) {
@@ -60,7 +60,7 @@ const Items = {
         } catch (error) {
             throw new Error('Erro ao atualizar item: ' + error.message);
         }
-    },
+    },  
 
     deleteItem: async (itemId) => {
         try {
@@ -150,7 +150,8 @@ const Items = {
                 i.brand_id as "brandId"
             FROM items i
             LEFT JOIN categories c ON i.category_id = c.id
-            LEFT JOIN brands b ON i.brand_id = b.id;
+            LEFT JOIN brands b ON i.brand_id = b.id
+            ORDER BY i.name;
         `;
         const result = await connection.query(query);
         return result.rows;

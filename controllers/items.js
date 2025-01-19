@@ -31,6 +31,13 @@ const ItemController = {
         const { itemId } = req.params;
         const { name, categoryId, brandId, barcode } = req.body;
         try {
+            if (barcode && !isValidBarcode(barcode)) {
+                return res.status(400).json({
+                    status: false,
+                    message: 'Barcode inválido.'
+                });
+            }
+
             const updatedItem = await ItemModel.updateItem(itemId, name, categoryId, brandId, barcode);
             res.status(200).json({
                 status: true,
@@ -43,7 +50,7 @@ const ItemController = {
                 message: error.message
             });
         }
-    },
+    },    
 
     deleteItem: async (req, res) => {
         const { itemId } = req.params;
@@ -61,22 +68,15 @@ const ItemController = {
         }
     },
 
-    getItemByBarcodeNameOrId: async (req, res) => {
+    getItemByBarcodeName: async (req, res) => {
         const { searchTerm } = req.params;
         
         try {
             let items = [];
     
-            const isNumeric = /^\d+$/.test(searchTerm);
-    
-            if (isNumeric) {
-                if (isValidBarcode(searchTerm)) {
-                    const byBarcode = await ItemModel.getItemByBarcode(searchTerm);
-                    items = items.concat(byBarcode);
-                } else {
-                    const byId = await ItemModel.getItemById(Number(searchTerm));
-                    items = items.concat(byId);
-                }
+            if (isValidBarcode(searchTerm)) {
+                const byBarcode = await ItemModel.getItemByBarcode(searchTerm);
+                items = items.concat(byBarcode);
             } else {
                 const byName = await ItemModel.getItemByName(searchTerm);
                 items = items.concat(byName);
@@ -88,6 +88,31 @@ const ItemController = {
                 status: true,
                 data: uniqueItems,
             });
+        } catch (error) {
+            res.status(500).json({
+                status: false,
+                message: error.message,
+            });
+        }
+    },
+
+    getItemById: async (req, res) => {
+        const { itemId } = req.params;
+        
+        try {
+            const item = await ItemModel.getItemById(Number(itemId));
+            
+            if (item) {
+                res.status(200).json({
+                    status: true,
+                    data: item,
+                });
+            } else {
+                res.status(404).json({
+                    status: false,
+                    message: 'Item não encontrado.',
+                });
+            }
         } catch (error) {
             res.status(500).json({
                 status: false,
