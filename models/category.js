@@ -60,16 +60,12 @@ const Category = {
                 UPDATE categories
                 SET name = $2
                 WHERE id = $1
-                RETURNING id, name;
+                RETURNING id as "categoryId", name as "categoryName";
             `;
             const values = [categoryId, categoryName];
             const result = await connection.query(query, values);
-            const updateCategory = {
-                categoryId: result.rows[0].id,
-                categoryName: result.rows[0].name
-            };
-
-            return updateCategory;
+            
+            return result.rows[0];
         } catch (error) {
             throw new Error(`${error.message}`);
         }
@@ -78,16 +74,13 @@ const Category = {
     findAll: async () => {
         try {
             const query = `
-                SELECT id, name
+                SELECT id as "categoryId", name as "categoryName"
                 FROM categories
                 ORDER BY name ASC;
             `;
             const result = await connection.query(query);
-            const categories = result.rows.map(category => ({
-                categoryId: category.id,
-                categoryName: category.name
-            }))
-            return categories;
+            
+            return result.rows;
         } catch (error) {
             throw new Error(`${error.message}`);
         }
