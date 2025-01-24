@@ -4,7 +4,7 @@ const listController = require('../controllers/lists');
 
 router.post('/', listController.createList);
 router.get('/find-all', listController.findAllLists)
-router.get('/list/:userId', listController.findListsByUserId);
+router.get('/:userId', listController.findListsByUserId);
 router.put('/:listId', listController.updateList);
 router.patch('/mark/:listId', listController.markAsCompleted);
 router.delete('/:listId', listController.deleteList);

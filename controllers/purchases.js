@@ -23,6 +23,13 @@ const PurchaseController = {
     getTotalSpent: async (req, res) => {
         const { userId, startDate, endDate } = req.query;
 
+        if (!userId || !startDate || !endDate) {
+            return res.status(400).json({
+                status: false,
+                error: 'Parâmetros inválidos. Certifique-se de fornecer userId, startDate e endDate.'
+            });
+        }
+
         try {
             const totalSpent = await PurchaseModel.getTotalSpentByPeriod(userId, startDate, endDate);
             res.status(200).json({ 
