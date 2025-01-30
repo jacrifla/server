@@ -86,42 +86,50 @@ const ListItemController = {
 
     markAsPurchased: async (req, res) => {
         const { itemListId, userId, categoryId = null, brandId = null, barcode = null } = req.body;
-
-        try {
-            const itemDetails = await ListItemModel.getItemDetails(itemListId);
     
+        if (!itemListId || !userId) {
+            return res.status(400).json({
+                status: false,
+                message: 'Parâmetros obrigatórios ausentes: itemListId ou userId.',
+            });
+        }
+    
+        try {
+            // Obtém os detalhes do item
+            const itemDetails = await ListItemModel.getItemDetails(itemListId);
             const { itemType, itemName, quantity, price } = itemDetails;
-            console.log('itemType: ', itemType);
-
-            if (itemType === 'custom' && barcode) {
-                if (!isValidBarcode(barcode)) {
-                    return res.status(400).json({
-                        status: false,
-                        message: 'Barcode inválido.',
-                    });
-                }
+    
+            if (itemType === 'custom' && barcode && !isValidBarcode(barcode)) {
+                return res.status(400).json({
+                    status: false,
+                    message: 'Barcode inválido.',
+                });
             }
-            
+    
             if (itemType === 'common') {
                 const total = price * quantity;
                 await createPurchase(itemListId, userId, quantity, price, total);
-            } else if (itemType === 'custom') {
+            }
+    
+            if (itemType === 'custom') {
                 const newItem = await createItem(itemName, categoryId, brandId, barcode);
                 const total = price * quantity;
                 await createPurchase(newItem.itemId, userId, quantity, price, total);
             }
+
+            await ListItemModel.markAsPurchase(itemListId);
     
             res.status(200).json({
                 status: true,
-                message: 'Compra realizada com sucesso!',
+                message: 'Compra realizada e item marcado como comprado com sucesso!',
             });
         } catch (error) {
             res.status(500).json({
                 status: false,
-                message: error.message,
+                message: 'Erro ao processar a compra.',
             });
         }
-    },
+    },    
 };
 
 module.exports = ListItemController;

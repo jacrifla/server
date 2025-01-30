@@ -60,7 +60,8 @@ const ListItem = {
                     li.item_type as "itemType", 
                     li.quantity::float as "quantity", 
                     li.price::float as "price", 
-                    li.created_at as "createdAt"
+                    li.created_at as "createdAt",
+                    li.purchased_at as "purchasedAt"
                 FROM list_items li
                 WHERE li.list_id = $1;
             `;
@@ -146,6 +147,24 @@ const ListItem = {
         const values = [itemListId];
         const result = await connection.query(query, values);
         return result.rows[0];
+    },
+
+    markAsPurchase: async (itemListId) => {
+        try {
+            const updateQuery = `
+                UPDATE list_items
+                SET purchased_at = CURRENT_TIMESTAMP
+                WHERE id = $1
+                RETURNING id AS "itemListId", list_id AS "listId";
+            `;
+            const result = await connection.query(updateQuery, [itemListId]);
+            if (result.rowCount === 0) {
+                throw new Error('Item não encontrado');
+            }
+            return result.rows[0];
+        } catch (error) {
+            throw new Error(error.message);
+        }
     },
 };
 
