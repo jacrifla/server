@@ -90,19 +90,19 @@ const PurchaseModel = {
     getCategoryPurchases: async (userId, startDate, endDate) => {
         const query = `
             SELECT 
-                c.name AS categoryName, 
-                SUM(p.total)::float AS totalSpent
+                c.name AS "categoryName", 
+                SUM(p.total)::float AS "totalSpent"
             FROM purchases p
             JOIN items i ON p.item_id = i.id
             JOIN categories c ON i.category_id = c.id
             WHERE p.user_id = $1 
             AND p.purchase_date BETWEEN $2 AND $3
             GROUP BY c.name
-            ORDER BY totalSpent DESC
+            ORDER BY "totalSpent" DESC
             LIMIT 100;
         `;
         const values = [userId, startDate, endDate];
-        const result = await connection.query(query, values);
+        const result = await connection.query(query, values);        
         return result.rows;
     },
 
