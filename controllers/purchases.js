@@ -77,7 +77,108 @@ const PurchaseController = {
             });
         }
     },
+
+    getAvgSpendPerPurchase: async (req, res) => {
+        const { userId, startDate, endDate } = req.query;
+
+        try {
+            const avgSpend = await PurchaseModel.getAvgSpendPerPurchase(userId, startDate, endDate);
+            res.status(200).json({
+                status: true,
+                data: avgSpend
+            });
+        } catch (error) {
+            res.status(500).json({ 
+                status: false,
+                error: error.message
+            });
+        }
+    },
+
+    getLargestPurchase: async (req, res) => {
+        const { userId, startDate, endDate } = req.query;
+
+        try {
+            const largestPurchase = await PurchaseModel.getLargestPurchase(userId, startDate, endDate);
+            res.status(200).json({
+                status: true,
+                data: largestPurchase
+            });
+        } catch (error) {
+            res.status(500).json({ 
+                status: false,
+                error: error.message
+            });
+        }
+    },
+
+    getAvgDailySpend: async (req, res) => {
+        const { userId, startDate, endDate } = req.query;
+
+        try {
+            const avgDailySpend = await PurchaseModel.getAvgDailySpend(userId, startDate, endDate);
+            res.status(200).json({
+                status: true,
+                data: avgDailySpend
+            });
+        } catch (error) {
+            res.status(500).json({ 
+                status: false,
+                error: error.message
+            });
+        }
+    },
+
+    getCategoryPurchases: async (req, res) => {
+        const { userId, startDate, endDate } = req.query;
+
+        try {
+            const categoryPurchases = await PurchaseModel.getCategoryPurchases(userId, startDate, endDate);
+            res.status(200).json({
+                status: true,
+                data: categoryPurchases
+            });
+        } catch (error) {
+            res.status(500).json({ 
+                status: false,
+                error: error.message
+            });
+        }
+    },
+
+    getComparisonSpent: async (req, res) => {
+        const { userId, startDate, endDate } = req.query;
+
+        try {
+            const comparisonSpent = await PurchaseModel.getComparisonSpent(userId, startDate, endDate);
+            res.status(200).json({
+                status: true,
+                data: comparisonSpent
+            });
+        } catch (error) {
+            res.status(500).json({ 
+                status: false,
+                error: error.message
+            });
+        }
+    },
+
+    getTopItemsByValue: async (req, res) => {
+        const { userId, startDate, endDate } = req.query;
+
+        try {
+            const topItems = await PurchaseModel.getTopItemsByValue(userId, startDate, endDate);
+            res.status(200).json({
+                status: true,
+                data: topItems
+            });
+        } catch (error) {
+            res.status(500).json({ 
+                status: false,
+                error: error.message
+            });
+        }
+    },
 };
 
 module.exports = PurchaseController;
-
