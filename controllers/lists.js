@@ -125,22 +125,6 @@ const ListController = {
         }
 
         try {
-            const listExists = await this.findListsByUserId(listId);
-            if (!listExists) {
-                return res.status(404).json({
-                    status: false,
-                    message: 'Lista não encontrada'
-                });
-            }
-
-            const userExists = await UserModel.findById(userId);
-            if (!userExists) {
-                return res.status(404).json({
-                    status: false,
-                    message: 'Usuário não encontrado'
-                });
-            }
-
             // Verificar se a data foi fornecida, se não, usar a data atual
             const dateToUse = purchaseDate || new Date().toISOString().split('T')[0];
 
