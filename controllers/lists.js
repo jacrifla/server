@@ -1,4 +1,6 @@
 const ListModel = require('../models/lists');
+const ListTotals = require('../models/listTotals');
+const UserModel = require('../models/user');
 
 const ListController = {
     createList: async (req, res) => {
@@ -106,16 +108,46 @@ const ListController = {
 
     markAsCompleted: async (req, res) => {
         const { listId } = req.params;
-        const { totalAmount } = req.body;
+        const { totalAmount, purchaseDate, userId } = req.body;
 
-        if (!listId || totalAmount == null) {
+        if (!listId || totalAmount == null || !userId) {
             return res.status(400).json({
                 status: false,
-                message: 'ID da lista e total da lista são obrigatórios'
+                message: 'ID da lista, total da lista e ID do usuário são obrigatórios'
             });
         };
 
+        if (isNaN(totalAmount) || totalAmount <= 0) {
+            return res.status(400).json({
+                status: false,
+                message: 'O total da lista deve ser um número válido e maior que zero'
+            });
+        }
+
         try {
+            const listExists = await this.findListsByUserId(listId);
+            if (!listExists) {
+                return res.status(404).json({
+                    status: false,
+                    message: 'Lista não encontrada'
+                });
+            }
+
+            const userExists = await UserModel.findById(userId);
+            if (!userExists) {
+                return res.status(404).json({
+                    status: false,
+                    message: 'Usuário não encontrado'
+                });
+            }
+
+            // Verificar se a data foi fornecida, se não, usar a data atual
+            const dateToUse = purchaseDate || new Date().toISOString().split('T')[0];
+
+            // Passando o userId correto
+            const listTotal = await ListTotals.create(listId, userId, totalAmount, dateToUse);
+
+            // Aqui você pode marcar a lista como completada ou o que for necessário
             const mark = await ListModel.markAsCompleted(listId, totalAmount);
 
             if (!mark) {
@@ -127,8 +159,8 @@ const ListController = {
 
             res.status(200).json({
                 status: true,
-                message: 'Marcada como concluída',
-                data: mark
+                message: 'Lista marcada como concluída e total registrado',
+                data: { listTotal, mark }
             });
         } catch (error) {
             res.status(500).json({
