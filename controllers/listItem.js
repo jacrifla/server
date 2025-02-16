@@ -85,51 +85,109 @@ const ListItemController = {
     },
 
     markAsPurchased: async (req, res) => {
-        const { itemListId, userId, categoryId = null, brandId = null, barcode = null } = req.body;
-    
+        const { itemListId, userId, categoryId = null, brandId = null, barcode = null, purchaseDate } = req.body;
+
+
         if (!itemListId || !userId) {
             return res.status(400).json({
                 status: false,
                 message: 'Parâmetros obrigatórios ausentes: itemListId ou userId.',
             });
         }
-    
+
         try {
             // Obtém os detalhes do item
             const itemDetails = await ListItemModel.getItemDetails(itemListId);
+
+            if (!itemDetails) {
+                return res.status(404).json({
+                    status: false,
+                    message: 'Item não encontrado na lista.',
+                });
+            }
+
             const { itemType, itemName, quantity, price } = itemDetails;
-    
+
+            // Valida quantity e price
+            if (!quantity || isNaN(quantity) || quantity <= 0) {
+                return res.status(400).json({
+                    status: false,
+                    message: 'Quantidade inválida.',
+                });
+            }
+
+            if (!price || isNaN(price) || price < 0) {
+                return res.status(400).json({
+                    status: false,
+                    message: 'Preço inválido.',
+                });
+            }
+
+            if (purchaseDate && isNaN(Date.parse(purchaseDate))) {
+                return res.status(400).json({
+                    status: false,
+                    message: 'Data de compra inválida.',
+                });
+            }
+
             if (itemType === 'custom' && barcode && !isValidBarcode(barcode)) {
                 return res.status(400).json({
                     status: false,
                     message: 'Barcode inválido.',
                 });
             }
-    
-            if (itemType === 'common') {
-                const total = price * quantity;
-                await createPurchase(itemListId, userId, quantity, price, total);
-            }
-    
+
+            let finalItemId = itemListId;
+
             if (itemType === 'custom') {
-                const newItem = await createItem(itemName, categoryId, brandId, barcode);
-                const total = price * quantity;
-                await createPurchase(newItem.itemId, userId, quantity, price, total);
+                try {
+                    const newItem = await createItem(itemName, categoryId, brandId, barcode);
+                    if (!newItem || !newItem.itemId) {
+                        throw new Error('Falha ao criar item personalizado.');
+                    }
+                    finalItemId = newItem.itemId;
+                } catch (error) {
+                    return res.status(500).json({
+                        status: false,
+                        message: 'Erro ao criar item personalizado.',
+                    });
+                }
             }
 
-            await ListItemModel.markAsPurchase(itemListId);
-    
-            res.status(200).json({
+            // Calcula total da compra
+            const total = price * quantity;
+
+            try {
+                await createPurchase(finalItemId, userId, quantity, price, total, purchaseDate);
+            } catch (error) {
+                return res.status(500).json({
+                    status: false,
+                    message: 'Erro ao registrar a compra.',
+                });
+            }
+
+            try {
+                await ListItemModel.markAsPurchase(itemListId);
+            } catch (error) {
+                return res.status(500).json({
+                    status: false,
+                    message: 'Erro ao marcar o item como comprado.',
+                });
+            }
+
+            return res.status(200).json({
                 status: true,
                 message: 'Compra realizada e item marcado como comprado com sucesso!',
             });
+
         } catch (error) {
-            res.status(500).json({
+            console.error('Erro inesperado:', error);
+            return res.status(500).json({
                 status: false,
                 message: 'Erro ao processar a compra.',
             });
         }
-    },    
+    },
 };
 
 module.exports = ListItemController;

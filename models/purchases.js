@@ -1,14 +1,14 @@
 const connection = require('../config/db');
 
 const PurchaseModel = {
-    createPurchase: async (itemId, userId, quantity, price, total) => {
+    createPurchase: async (itemId, userId, quantity, price, total, purchaseDate) => {
         try {
             const query = `
-                INSERT INTO purchases (item_id, user_id, quantity, price, total)
-                VALUES ($1, $2, $3, $4, $5)
+                INSERT INTO purchases (item_id, user_id, quantity, price, total, purchase_date)
+                VALUES ($1, $2, $3, $4, $5, $6)
                 RETURNING id as "purchaseId", purchase_date as "purchaseDate";
             `;
-            const values = [itemId, userId, quantity, price, total];
+            const values = [itemId, userId, quantity, price, total, purchaseDate];
             const result = await connection.query(query, values);
             return result.rows[0];
         } catch (error) {
@@ -19,7 +19,7 @@ const PurchaseModel = {
     getTotalSpentByPeriod: async (userId, startDate, endDate) => {
         const query = `
             SELECT SUM(total)::float AS "totalSpent"
-            FROM purchases
+            FROM list_totals
             WHERE user_id = $1 AND purchase_date BETWEEN $2 AND $3;
         `;
         const values = [userId, startDate, endDate];

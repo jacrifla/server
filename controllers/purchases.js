@@ -2,11 +2,13 @@ const PurchaseModel = require('../models/purchases');
 
 const PurchaseController = {
     createPurchase: async (req, res) => {
-        const { itemId, userId, quantity, price } = req.body;
+        const { itemId, userId, quantity, price, purchaseDate } = req.body;
         const total = price * quantity;
-
+        
+        // Usar a data fornecida ou pegar a data atual
+        const dateToUse = purchaseDate || new Date().toISOString().split('T')[0];
         try {
-            const purchase = await PurchaseModel.createPurchase(itemId, userId, quantity, price, total);
+            const purchase = await PurchaseModel.createPurchase(itemId, userId, quantity, price, total, dateToUse);
             res.status(201).json({
                 status: true,
                 message: 'Compra registrada com sucesso',
