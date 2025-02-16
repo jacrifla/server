@@ -1,8 +1,19 @@
 const connection = require('../config/db');
 
 const Brand = {
-    create: async ( brandName ) => {
+    create: async (brandName) => {
         try {
+            const brandExistsQuery = `
+                SELECT 1
+                FROM brands
+                WHERE name = $1;
+            `;
+            const brandExistsResult = await connection.query(brandExistsQuery, [brandName]);
+
+            if (brandExistsResult.rowCount > 0) {
+                throw new Error('Marca já existente.');
+            }
+
             const query = `
                 INSERT INTO brands (name)
                 VALUES ($1)
@@ -10,7 +21,7 @@ const Brand = {
             `;
             const values = [brandName];
             const result = await connection.query(query, values);
-            
+
             return result.rows[0];
         } catch (error) {
             throw new Error(`${error.message}`);
@@ -47,7 +58,7 @@ const Brand = {
         }
     },
 
-    update: async ( brandId, brandName ) => {
+    update: async (brandId, brandName) => {
         try {
             const exists = await Brand.brandExists(brandId);
 
@@ -77,14 +88,14 @@ const Brand = {
                 ORDER BY name ASC;
             `;
             const result = await connection.query(query);
-            
+
             return result.rows;
         } catch (error) {
             throw new Error(`${error.message}`);
         }
     },
 
-    delete: async ( brandId ) => {
+    delete: async (brandId) => {
         try {
             const exists = await Brand.brandExists(brandId);
 

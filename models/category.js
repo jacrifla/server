@@ -1,8 +1,19 @@
 const connection = require('../config/db');
 
 const Category = {
-    create: async ( categoryName ) => {
+    create: async (categoryName) => {
         try {
+            const categoryExistsQuery = `
+                SELECT 1
+                FROM categories
+                WHERE name = $1;
+            `;
+            const categoryExistsResult = await connection.query(categoryExistsQuery, [categoryName]);
+
+            if (categoryExistsResult.rowCount > 0) {
+                throw new Error('Categoria já existente.');
+            }
+
             const query = `
                 INSERT INTO categories (name)
                 VALUES ($1)
@@ -10,7 +21,7 @@ const Category = {
             `;
             const values = [categoryName];
             const result = await connection.query(query, values);
-            
+
             return result.rows[0];
         } catch (error) {
             throw new Error(`${error.message}`);
@@ -48,7 +59,7 @@ const Category = {
         }
     },
 
-    update: async ( categoryId, categoryName ) => {
+    update: async (categoryId, categoryName) => {
         try {
             const exists = await Category.categoryExists(categoryId);
 
@@ -64,7 +75,7 @@ const Category = {
             `;
             const values = [categoryId, categoryName];
             const result = await connection.query(query, values);
-            
+
             return result.rows[0];
         } catch (error) {
             throw new Error(`${error.message}`);
@@ -79,14 +90,14 @@ const Category = {
                 ORDER BY name ASC;
             `;
             const result = await connection.query(query);
-            
+
             return result.rows;
         } catch (error) {
             throw new Error(`${error.message}`);
         }
     },
 
-    delete: async ( categoryId ) => {
+    delete: async (categoryId) => {
         try {
             const exists = await Category.categoryExists(categoryId);
 
