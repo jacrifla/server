@@ -24,7 +24,7 @@ const PurchaseModel = {
         `;
         const values = [userId, startDate, endDate];
         const result = await connection.query(query, values);
-        return result.rows[0].totalSpent || 0;
+        return result.rows[0];
     },
 
     getMostPurchasedItems: async (userId, limit = 5) => {
@@ -50,7 +50,7 @@ const PurchaseModel = {
         `;
         const values = [userId, startDate, endDate];
         const result = await connection.query(query, values);
-        return result.rows[0].totalQuantity || 0;
+        return result.rows[0];
     },
 
     getAvgSpendPerPurchase: async (userId, startDate, endDate) => {
@@ -61,7 +61,7 @@ const PurchaseModel = {
         `;
         const values = [userId, startDate, endDate];
         const result = await connection.query(query, values);
-        return result.rows[0].avgSpendPerPurchase || 0;
+        return result.rows[0];
     },
 
     getLargestPurchase: async (userId, startDate, endDate) => {
@@ -84,7 +84,7 @@ const PurchaseModel = {
         `;
         const values = [userId, startDate, endDate];
         const result = await connection.query(query, values);
-        return result.rows[0].avgDailySpend || 0;
+        return result.rows[0];
     },
 
     getCategoryPurchases: async (userId, startDate, endDate) => {
@@ -102,19 +102,45 @@ const PurchaseModel = {
             LIMIT 100;
         `;
         const values = [userId, startDate, endDate];
-        const result = await connection.query(query, values);        
+        const result = await connection.query(query, values);
         return result.rows;
     },
 
     getComparisonSpent: async (userId, startDate, endDate) => {
         const query = `
-            SELECT SUM(total)::float AS "totalSpent"
-            FROM purchases
-            WHERE user_id = $1 AND purchase_date BETWEEN $2 AND $3;
+            SELECT 
+                i.name AS "itemName",
+                MIN(p.price) AS "minPrice",
+                MAX(p.price) AS "maxPrice",
+                -- Subconsulta para pegar a data do menor preço
+                (SELECT p2.purchase_date 
+                FROM purchases p2 
+                WHERE p2.item_id = i.id 
+                AND p2.price = MIN(p.price) 
+                LIMIT 1) AS "minPriceDate",
+                -- Subconsulta para pegar a data do maior preço
+                (SELECT p2.purchase_date 
+                FROM purchases p2 
+                WHERE p2.item_id = i.id 
+                AND p2.price = MAX(p.price) 
+                LIMIT 1) AS "maxPriceDate"
+            FROM 
+                purchases p
+            JOIN 
+                items i ON p.item_id = i.id
+            WHERE 
+                p.user_id = $1 
+                AND p.purchase_date BETWEEN $2 AND $3
+            GROUP BY 
+                i.name, i.id
+            HAVING 
+                MIN(p.price) <> MAX(p.price)
+            ORDER BY 
+                i.name;
         `;
         const values = [userId, startDate, endDate];
         const result = await connection.query(query, values);
-        return result.rows[0].totalSpent || 0;
+        return result.rows;
     },
 
     getTopItemsByValue: async (userId, startDate, endDate) => {
