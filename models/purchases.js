@@ -106,14 +106,14 @@ const PurchaseModel = {
         return result.rows;
     },
 
-    getComparisonSpent: async (userId, startDate, endDate) => {
+    getComparisonSpent: async (userId, startDate, endDate, limit, offset) => {
         const query = `
             WITH price_data AS (
                 SELECT 
-                    i.id AS item_id,
-                    i.name AS item_name,
-                    MIN(p.price) AS min_price,
-                    MAX(p.price) AS max_price
+                    i.id AS itemId,
+                    i.name AS "itemName",
+                    MIN(p.price) AS "minPrice",
+                    MAX(p.price) AS "maxPrice"
                 FROM purchases p
                 JOIN items i ON p.item_id = i.id
                 WHERE p.user_id = $1
@@ -122,26 +122,26 @@ const PurchaseModel = {
                 HAVING MAX(p.price) - MIN(p.price) >= 1
             )
             SELECT 
-                pd.item_name,
-                pd.min_price,
-                pd.max_price,
+                "itemName",
+                "minPrice",
+                "maxPrice",
                 (SELECT p2.purchase_date 
                 FROM purchases p2 
-                WHERE p2.item_id = pd.item_id 
-                AND p2.price = pd.min_price 
+                WHERE p2.item_id = pd.itemId 
+                AND p2.price = "minPrice" 
                 ORDER BY p2.purchase_date ASC 
-                LIMIT 1) AS min_price_date,
+                LIMIT 1) AS "minPriceDate",
                 (SELECT p2.purchase_date 
                 FROM purchases p2 
-                WHERE p2.item_id = pd.item_id 
-                AND p2.price = pd.max_price 
+                WHERE p2.item_id = pd.itemId 
+                AND p2.price = "maxPrice" 
                 ORDER BY p2.purchase_date ASC 
-                LIMIT 1) AS max_price_date
+                LIMIT 1) AS "maxPriceDate"
             FROM price_data pd
-            ORDER BY pd.item_name
+            ORDER BY "itemName"
             LIMIT $4 OFFSET $5;
         `;
-        const values = [userId, startDate, endDate, limit, offset]; 
+        const values = [userId, startDate, endDate, limit, offset];
         const result = await connection.query(query, values);
         return result.rows;
     },

@@ -149,7 +149,7 @@ const PurchaseController = {
     },
 
     getComparisonSpent: async (req, res) => {
-        const { userId, startDate, endDate, limit = 10, offset = 0 } = req.query;
+        const { userId, startDate, endDate, limit, offset } = req.query;
 
         try {
             const comparisonSpent = await PurchaseModel.getComparisonSpent(userId, startDate, endDate, limit, offset);
