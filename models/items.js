@@ -1,20 +1,21 @@
 const connection = require('../config/db');
 
 const Items = {
-    createItem: async (name, categoryId, brandId, barcode) => {
+    createItem: async (name, categoryId, brandId, barcode, userId) => {
         try {
             const query = `
-                INSERT INTO items (name, category_id, brand_id, barcode)
-                VALUES ($1, $2, $3, $4)
+                INSERT INTO items (name, category_id, brand_id, barcode, user_id)
+                VALUES ($1, $2, $3, $4, $5)
                 RETURNING 
                     id as "itemId", 
                     name as "itemName", 
                     category_id as "categoryId", 
                     brand_id as "brandId", 
                     barcode,
-                    created_at as "createdAt";
+                    created_at as "createdAt",
+                    user_id as "userId";
             `;
-            const values = [name, categoryId ?? null, brandId ?? null, barcode];
+            const values = [name, categoryId, brandId, barcode, userId];
             const result = await connection.query(query, values);
             return result.rows[0];
         } catch (error) {
@@ -37,30 +38,41 @@ const Items = {
         }
     },
 
-    updateItem: async (itemId, name, categoryId, brandId, barcode) => {
+    updateItem: async (itemId, name, categoryId, brandId, barcode, updatedBy) => {
         try {
+            const userCheck = await connection.query(
+                "SELECT id FROM users WHERE id = $1",
+                [updatedBy]
+            );
+            if (userCheck.rows.length === 0) {
+                throw new Error("Usuário que atualiza não existe.");
+            }
+
             const query = `
                 UPDATE items
                 SET name = COALESCE($2, name),
                     category_id = COALESCE($3, category_id),
                     brand_id = COALESCE($4, brand_id),
                     barcode = COALESCE($5, barcode),
-                    updated_at = CURRENT_TIMESTAMP
+                    updated_at = CURRENT_TIMESTAMP,
+                    updated_by = $6
                 WHERE id = $1
                 RETURNING id as "itemId", 
                     name as "itemName", 
                     category_id as "categoryId", 
                     brand_id as "brandId", 
                     barcode,
-                    updated_at as "updatedAt";
+                    updated_at as "updatedAt",
+                    user_id as "userId",
+                    updated_by as "updatedBy";
             `;
-            const values = [itemId, name, categoryId, brandId, barcode];
+            const values = [itemId, name, categoryId, brandId, barcode, updatedBy];
             const result = await connection.query(query, values);
             return result.rows[0];
         } catch (error) {
             throw new Error('Erro ao atualizar item: ' + error.message);
         }
-    },  
+    },
 
     deleteItem: async (itemId) => {
         try {
@@ -96,7 +108,7 @@ const Items = {
         const result = await connection.query(query, values);
         return result.rows;
     },
-    
+
     getItemByName: async (name) => {
         const query = `
             SELECT
@@ -116,8 +128,8 @@ const Items = {
         const result = await connection.query(query, values);
         return result.rows;
     },
-    
-    getItemByBarcode: async (barcode) => {        
+
+    getItemByBarcode: async (barcode) => {
         const query = `
             SELECT
             i.id as "itemId",
@@ -134,9 +146,9 @@ const Items = {
         `;
         const values = [barcode];
         const result = await connection.query(query, values);
-        
+
         return result.rows;
-    },        
+    },
 
     getAllItems: async () => {
         const query = `

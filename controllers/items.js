@@ -3,8 +3,8 @@ const { isValidBarcode } = require('../utils/validation');
 
 const ItemController = {
     createItem: async (req, res) => {
-        const { name, categoryId, brandId, barcode } = req.body;
-        
+        const { name, categoryId, brandId, barcode, userId } = req.body;
+
         try {
             if (barcode && !isValidBarcode(barcode)) {
                 return res.status(400).json({
@@ -13,7 +13,7 @@ const ItemController = {
                 });
             }
 
-            const newItem = await ItemModel.createItem(name, categoryId, brandId, barcode);
+            const newItem = await ItemModel.createItem(name, categoryId, brandId, barcode, userId);
             res.status(201).json({
                 status: true,
                 message: 'Item criado com sucesso',
@@ -29,7 +29,8 @@ const ItemController = {
 
     updateItem: async (req, res) => {
         const { itemId } = req.params;
-        const { name, categoryId, brandId, barcode } = req.body;
+        const { name, categoryId, brandId, barcode, updatedBy } = req.body;
+
         try {
             if (barcode && !isValidBarcode(barcode)) {
                 return res.status(400).json({
@@ -38,7 +39,7 @@ const ItemController = {
                 });
             }
 
-            const updatedItem = await ItemModel.updateItem(itemId, name, categoryId, brandId, barcode);
+            const updatedItem = await ItemModel.updateItem(itemId, name, categoryId, brandId, barcode, updatedBy);
             res.status(200).json({
                 status: true,
                 message: 'Item atualizado com sucesso',
@@ -50,7 +51,7 @@ const ItemController = {
                 message: error.message
             });
         }
-    },    
+    },
 
     deleteItem: async (req, res) => {
         const { itemId } = req.params;
@@ -70,10 +71,10 @@ const ItemController = {
 
     getItemByBarcodeName: async (req, res) => {
         const { searchTerm } = req.params;
-        
+
         try {
             let items = [];
-    
+
             if (isValidBarcode(searchTerm)) {
                 const byBarcode = await ItemModel.getItemByBarcode(searchTerm);
                 items = items.concat(byBarcode);
@@ -81,9 +82,9 @@ const ItemController = {
                 const byName = await ItemModel.getItemByName(searchTerm);
                 items = items.concat(byName);
             }
-    
+
             const uniqueItems = Array.from(new Map(items.map(item => [item.itemId, item])).values());
-    
+
             res.status(200).json({
                 status: true,
                 data: uniqueItems,
@@ -98,10 +99,10 @@ const ItemController = {
 
     getItemById: async (req, res) => {
         const { itemId } = req.params;
-        
+
         try {
             const item = await ItemModel.getItemById(Number(itemId));
-            
+
             if (item) {
                 res.status(200).json({
                     status: true,
