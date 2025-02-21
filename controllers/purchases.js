@@ -4,7 +4,7 @@ const PurchaseController = {
     createPurchase: async (req, res) => {
         const { itemId, userId, quantity, price, purchaseDate } = req.body;
         const total = price * quantity;
-        
+
         // Usar a data fornecida ou pegar a data atual
         const dateToUse = purchaseDate || new Date().toISOString().split('T')[0];
         try {
@@ -15,7 +15,7 @@ const PurchaseController = {
                 data: purchase
             });
         } catch (error) {
-            res.status(500).json({ 
+            res.status(500).json({
                 status: false,
                 error: error.message
             });
@@ -34,12 +34,12 @@ const PurchaseController = {
 
         try {
             const totalSpent = await PurchaseModel.getTotalSpentByPeriod(userId, startDate, endDate);
-            res.status(200).json({ 
+            res.status(200).json({
                 status: true,
                 data: totalSpent
             });
         } catch (error) {
-            res.status(500).json({ 
+            res.status(500).json({
                 status: false,
                 error: error.message
             });
@@ -56,7 +56,7 @@ const PurchaseController = {
                 data: mostPurchased
             });
         } catch (error) {
-            res.status(500).json({ 
+            res.status(500).json({
                 status: false,
                 error: error.message
             });
@@ -73,7 +73,7 @@ const PurchaseController = {
                 data: totalQuantity
             });
         } catch (error) {
-            res.status(500).json({ 
+            res.status(500).json({
                 status: false,
                 error: error.message
             });
@@ -90,7 +90,7 @@ const PurchaseController = {
                 data: avgSpend
             });
         } catch (error) {
-            res.status(500).json({ 
+            res.status(500).json({
                 status: false,
                 error: error.message
             });
@@ -107,7 +107,7 @@ const PurchaseController = {
                 data: largestPurchase
             });
         } catch (error) {
-            res.status(500).json({ 
+            res.status(500).json({
                 status: false,
                 error: error.message
             });
@@ -124,7 +124,7 @@ const PurchaseController = {
                 data: avgDailySpend
             });
         } catch (error) {
-            res.status(500).json({ 
+            res.status(500).json({
                 status: false,
                 error: error.message
             });
@@ -141,7 +141,7 @@ const PurchaseController = {
                 data: categoryPurchases
             });
         } catch (error) {
-            res.status(500).json({ 
+            res.status(500).json({
                 status: false,
                 error: error.message
             });
@@ -149,16 +149,16 @@ const PurchaseController = {
     },
 
     getComparisonSpent: async (req, res) => {
-        const { userId, startDate, endDate } = req.query;
+        const { userId, startDate, endDate, limit = 10, offset = 0 } = req.query;
 
         try {
-            const comparisonSpent = await PurchaseModel.getComparisonSpent(userId, startDate, endDate);
+            const comparisonSpent = await PurchaseModel.getComparisonSpent(userId, startDate, endDate, limit, offset);
             res.status(200).json({
                 status: true,
                 data: comparisonSpent
             });
         } catch (error) {
-            res.status(500).json({ 
+            res.status(500).json({
                 status: false,
                 error: error.message
             });
@@ -175,7 +175,7 @@ const PurchaseController = {
                 data: topItems
             });
         } catch (error) {
-            res.status(500).json({ 
+            res.status(500).json({
                 status: false,
                 error: error.message
             });

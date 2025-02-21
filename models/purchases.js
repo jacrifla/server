@@ -108,37 +108,40 @@ const PurchaseModel = {
 
     getComparisonSpent: async (userId, startDate, endDate) => {
         const query = `
-            SELECT 
-                i.name AS "itemName",
-                MIN(p.price) AS "minPrice",
-                MAX(p.price) AS "maxPrice",
-                -- Subconsulta para pegar a data do menor preço
-                (SELECT p2.purchase_date 
-                FROM purchases p2 
-                WHERE p2.item_id = i.id 
-                AND p2.price = MIN(p.price) 
-                LIMIT 1) AS "minPriceDate",
-                -- Subconsulta para pegar a data do maior preço
-                (SELECT p2.purchase_date 
-                FROM purchases p2 
-                WHERE p2.item_id = i.id 
-                AND p2.price = MAX(p.price) 
-                LIMIT 1) AS "maxPriceDate"
-            FROM 
-                purchases p
-            JOIN 
-                items i ON p.item_id = i.id
-            WHERE 
-                p.user_id = $1 
+            WITH price_data AS (
+                SELECT 
+                    i.id AS item_id,
+                    i.name AS item_name,
+                    MIN(p.price) AS min_price,
+                    MAX(p.price) AS max_price
+                FROM purchases p
+                JOIN items i ON p.item_id = i.id
+                WHERE p.user_id = $1
                 AND p.purchase_date BETWEEN $2 AND $3
-            GROUP BY 
-                i.name, i.id
-            HAVING 
-                MIN(p.price) <> MAX(p.price)
-            ORDER BY 
-                i.name;
+                GROUP BY i.id, i.name
+                HAVING MAX(p.price) - MIN(p.price) >= 1
+            )
+            SELECT 
+                pd.item_name,
+                pd.min_price,
+                pd.max_price,
+                (SELECT p2.purchase_date 
+                FROM purchases p2 
+                WHERE p2.item_id = pd.item_id 
+                AND p2.price = pd.min_price 
+                ORDER BY p2.purchase_date ASC 
+                LIMIT 1) AS min_price_date,
+                (SELECT p2.purchase_date 
+                FROM purchases p2 
+                WHERE p2.item_id = pd.item_id 
+                AND p2.price = pd.max_price 
+                ORDER BY p2.purchase_date ASC 
+                LIMIT 1) AS max_price_date
+            FROM price_data pd
+            ORDER BY pd.item_name
+            LIMIT $4 OFFSET $5;
         `;
-        const values = [userId, startDate, endDate];
+        const values = [userId, startDate, endDate, limit, offset]; 
         const result = await connection.query(query, values);
         return result.rows;
     },
