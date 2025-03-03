@@ -1,21 +1,22 @@
 const connection = require('../config/db');
 
 const Items = {
-    createItem: async (name, categoryId, brandId, barcode, userId) => {
+    createItem: async (name, categoryId, brandId, barcode, unitId, userId) => {
         try {
             const query = `
-                INSERT INTO items (name, category_id, brand_id, barcode, user_id)
-                VALUES ($1, $2, $3, $4, $5)
+                INSERT INTO items (name, category_id, brand_id, barcode, unit_id, user_id)
+                VALUES ($1, $2, $3, $4, $5, $6)
                 RETURNING 
                     id as "itemId", 
                     name as "itemName", 
                     category_id as "categoryId", 
                     brand_id as "brandId", 
+                    unit_id as "unitId",
                     barcode,
                     created_at as "createdAt",
                     user_id as "userId";
             `;
-            const values = [name, categoryId, brandId, barcode, userId];
+            const values = [name, categoryId, brandId, barcode, unitId, userId];
             const result = await connection.query(query, values);
             return result.rows[0];
         } catch (error) {
@@ -38,7 +39,7 @@ const Items = {
         }
     },
 
-    updateItem: async (itemId, name, categoryId, brandId, barcode, updatedBy) => {
+    updateItem: async (itemId, name, categoryId, brandId, barcode, unitId, updatedBy) => {
         try {
             const userCheck = await connection.query(
                 "SELECT id FROM users WHERE id = $1",
@@ -54,19 +55,21 @@ const Items = {
                     category_id = COALESCE($3, category_id),
                     brand_id = COALESCE($4, brand_id),
                     barcode = COALESCE($5, barcode),
+                    unit_id = COALESCE($6, unit_id),
                     updated_at = CURRENT_TIMESTAMP,
-                    updated_by = $6
+                    updated_by = $7
                 WHERE id = $1
                 RETURNING id as "itemId", 
                     name as "itemName", 
                     category_id as "categoryId", 
-                    brand_id as "brandId", 
+                    brand_id as "brandId",
+                    unit_id as "unitId",
                     barcode,
                     updated_at as "updatedAt",
                     user_id as "userId",
                     updated_by as "updatedBy";
             `;
-            const values = [itemId, name, categoryId, brandId, barcode, updatedBy];
+            const values = [itemId, name, categoryId, brandId, barcode, unitId, updatedBy];
             const result = await connection.query(query, values);
             return result.rows[0];
         } catch (error) {
@@ -98,6 +101,7 @@ const Items = {
                 c.name as "categoryName",
                 i.category_id as "categoryId",
                 b.name as "brandName",
+                unit_id as "unitId",
                 i.brand_id as "brandId"
             FROM items i
             LEFT JOIN categories c ON i.category_id = c.id
@@ -118,6 +122,7 @@ const Items = {
                 c.name as "categoryName",
                 i.category_id as "categoryId",
                 b.name as "brandName",
+                unit_id as "unitId",
                 i.brand_id as "brandId"
             FROM items i
             LEFT JOIN categories c ON i.category_id = c.id
@@ -138,6 +143,7 @@ const Items = {
             c.name as "categoryName",
             i.category_id as "categoryId",
             b.name as "brandName",
+            unit_id as "unitId",
             i.brand_id as "brandId"
             FROM items i
             LEFT JOIN categories c ON i.category_id = c.id
@@ -159,6 +165,7 @@ const Items = {
                 c.name as "categoryName",
                 i.category_id as "categoryId",
                 b.name as "brandName",
+                unit_id as "unitId",
                 i.brand_id as "brandId"
             FROM items i
             LEFT JOIN categories c ON i.category_id = c.id

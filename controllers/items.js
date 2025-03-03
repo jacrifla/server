@@ -3,7 +3,7 @@ const { isValidBarcode } = require('../utils/validation');
 
 const ItemController = {
     createItem: async (req, res) => {
-        const { name, categoryId, brandId, barcode, userId } = req.body;
+        const { name, categoryId, brandId, barcode, unitId, userId } = req.body;
 
         try {
             if (barcode && !isValidBarcode(barcode)) {
@@ -13,7 +13,7 @@ const ItemController = {
                 });
             }
 
-            const newItem = await ItemModel.createItem(name, categoryId, brandId, barcode, userId);
+            const newItem = await ItemModel.createItem(name, categoryId, brandId, barcode, unitId, userId);
             res.status(201).json({
                 status: true,
                 message: 'Item criado com sucesso',
@@ -29,7 +29,7 @@ const ItemController = {
 
     updateItem: async (req, res) => {
         const { itemId } = req.params;
-        const { name, categoryId, brandId, barcode, updatedBy } = req.body;
+        const { name, categoryId, brandId, barcode, unitId, updatedBy } = req.body;
 
         try {
             if (barcode && !isValidBarcode(barcode)) {
@@ -39,7 +39,7 @@ const ItemController = {
                 });
             }
 
-            const updatedItem = await ItemModel.updateItem(itemId, name, categoryId, brandId, barcode, updatedBy);
+            const updatedItem = await ItemModel.updateItem(itemId, name, categoryId, brandId, barcode, unitId, updatedBy);
             res.status(200).json({
                 status: true,
                 message: 'Item atualizado com sucesso',
