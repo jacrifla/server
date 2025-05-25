@@ -1,14 +1,14 @@
 const connection = require('../config/db');
 
 const PurchaseModel = {
-    createPurchase: async (itemId, userId, quantity, price, total, purchaseDate) => {
+    createPurchase: async (itemId, userId, quantity, price, total, purchaseDate, marketId) => {
         try {
             const query = `
-                INSERT INTO purchases (item_id, user_id, quantity, price, total, purchase_date)
-                VALUES ($1, $2, $3, $4, $5, $6)
+                INSERT INTO purchases (item_id, user_id, quantity, price, total, purchase_date, market_id)
+                VALUES ($1, $2, $3, $4, $5, $6, $7)
                 RETURNING id as "purchaseId", purchase_date as "purchaseDate";
             `;
-            const values = [itemId, userId, quantity, price, total, purchaseDate];
+            const values = [itemId, userId, quantity, price, total, purchaseDate, marketId];
             const result = await connection.query(query, values);
             return result.rows[0];
         } catch (error) {

@@ -85,7 +85,7 @@ const ListItemController = {
     },
 
     markAsPurchased: async (req, res) => {
-        const { itemListId, itemId, userId, categoryId = null, brandId = null, barcode = null, purchaseDate } = req.body;
+        const { itemListId, itemId, userId, categoryId = null, brandId = null, barcode = null, purchaseDate, marketId } = req.body;
 
         // Verifica se itemListId ou itemId e userId foram passados
         if (!userId || (!itemListId && !itemId)) {
@@ -154,9 +154,18 @@ const ListItemController = {
 
             // Calcular total da compra
             const total = itemDetails ? itemDetails.price * itemDetails.quantity : 0;
-            
+
             try {
-                const purchase = await createPurchase(finalItemId, userId, itemDetails.quantity, itemDetails.price, total, purchaseDate);
+                await createPurchase(
+                    finalItemId,
+                    userId,
+                    itemDetails.quantity,
+                    itemDetails.price,
+                    total,
+                    purchaseDate,
+                    marketId
+                );
+
             } catch (error) {
                 return res.status(500).json({
                     status: false,
