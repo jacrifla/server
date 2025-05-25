@@ -7,6 +7,7 @@ const listItemRoutes = require('../routes/listItem');
 const priceHistoryRoutes = require('../routes/purchases');
 const sharedListRoutes = require('../routes/share');
 const unitRoutes = require('../routes/unit');
+const marketRoutes = require('../routes/markets');
 
 module.exports = (app) => {
     app.use('/user', userRoutes);
@@ -18,4 +19,5 @@ module.exports = (app) => {
     app.use('/purchase', priceHistoryRoutes);
     app.use('/shared-list-tokens', sharedListRoutes);
     app.use('/unit', unitRoutes);
+    app.use('/markets', marketRoutes);
 }
