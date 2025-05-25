@@ -101,11 +101,13 @@ const Items = {
                 c.name as "categoryName",
                 i.category_id as "categoryId",
                 b.name as "brandName",
-                unit_id as "unitId",
-                i.brand_id as "brandId"
+                i.brand_id as "brandId",
+                u.name as "unitName",
+                i.unit_id as "unitId"
             FROM items i
             LEFT JOIN categories c ON i.category_id = c.id
             LEFT JOIN brands b ON i.brand_id = b.id
+            LEFT JOIN units u ON i.unit_id = u.id
             WHERE i.id = $1;
         `;
         const values = [id];
@@ -122,11 +124,13 @@ const Items = {
                 c.name as "categoryName",
                 i.category_id as "categoryId",
                 b.name as "brandName",
-                unit_id as "unitId",
-                i.brand_id as "brandId"
+                i.brand_id as "brandId",
+                u.name as "unitName",
+                i.unit_id as "unitId"
             FROM items i
             LEFT JOIN categories c ON i.category_id = c.id
             LEFT JOIN brands b ON i.brand_id = b.id
+            LEFT JOIN units u ON i.unit_id = u.id
             WHERE i.name ILIKE $1;
         `;
         const values = [`%${name}%`];
@@ -136,18 +140,20 @@ const Items = {
 
     getItemByBarcode: async (barcode) => {
         const query = `
-            SELECT
-            i.id as "itemId",
-            i.name as "itemName",
-            i.barcode::BIGINT as barcode,
-            c.name as "categoryName",
-            i.category_id as "categoryId",
-            b.name as "brandName",
-            unit_id as "unitId",
-            i.brand_id as "brandId"
+           SELECT
+                i.id as "itemId",
+                i.name as "itemName",
+                i.barcode::BIGINT as barcode,
+                c.name as "categoryName",
+                i.category_id as "categoryId",
+                b.name as "brandName",
+                i.brand_id as "brandId",
+                u.name as "unitName",
+                i.unit_id as "unitId"
             FROM items i
             LEFT JOIN categories c ON i.category_id = c.id
             LEFT JOIN brands b ON i.brand_id = b.id
+            LEFT JOIN units u ON i.unit_id = u.id
             WHERE i.barcode = $1;
         `;
         const values = [barcode];
@@ -165,11 +171,13 @@ const Items = {
                 c.name as "categoryName",
                 i.category_id as "categoryId",
                 b.name as "brandName",
-                unit_id as "unitId",
-                i.brand_id as "brandId"
+                i.brand_id as "brandId",
+                u.name as "unitName",
+                i.unit_id as "unitId"
             FROM items i
             LEFT JOIN categories c ON i.category_id = c.id
             LEFT JOIN brands b ON i.brand_id = b.id
+            LEFT JOIN units u ON i.unit_id = u.id
             ORDER BY i.name;
         `;
         const result = await connection.query(query);
