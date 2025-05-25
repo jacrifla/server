@@ -3,16 +3,16 @@ const Unit = require('../models/unit');
 const unitController = {
     create: async (req, res) => {
         try {
-            const { abbreviation } = req.body;
+            const { unitName } = req.body;
 
-            if (!abbreviation) {
+            if (!unitName) {
                 return res.status(400).json({
                     status: false,
                     message: "A unidade de medida é obrigatória." 
                 });
             }
 
-            const newUnit = await Unit.create(abbreviation.toUpperCase());
+            const newUnit = await Unit.create(unitName.toUpperCase());
             res.status(201).json({
                 status: true,
                 message: "Unidade de medida criada com sucesso.",
@@ -67,15 +67,15 @@ const unitController = {
     update: async (req, res) => {
         try {
             const { unitId } = req.params;
-            const { abbreviation } = req.body;
+            const { unitName } = req.body;
 
-            if (!abbreviation) {
+            if (!unitName) {
                 return res.status(400).json({ 
                     message: "A unidade de medida é obrigatória." 
                 });
             }
 
-            const updatedUnit = await Unit.update(unitId, abbreviation.toUpperCase());
+            const updatedUnit = await Unit.update(unitId, unitName.toUpperCase());
 
             if (!updatedUnit) {
                 return res.status(404).json({ 
