@@ -74,29 +74,38 @@ const ListItem = {
 
     update: async (itemListId, itemData) => {
         try {
-            let updateQuery = `
-                UPDATE list_items 
-                SET 
-                    quantity = $2, 
-                    price = $3
-                    ${itemData.itemName ? ", item_name = $4" : ""}
-                WHERE id = $1
-                RETURNING id as "itemListId", 
-                    list_id AS "listId", 
-                    item_id AS "itemId", 
-                    item_name AS "itemName", 
-                    item_type AS "itemType", 
-                    quantity::float, price::float, 
-                    created_at AS "createdAt";
-            `;
+            let updateFields = [];
+            let values = [];
+            let idx = 1;
 
-            const values = [itemListId, itemData.quantity, itemData.price];
+            values.push(itemListId);
+
+            updateFields.push(`quantity = $${++idx}`);
+            values.push(itemData.quantity);
+
+            updateFields.push(`price = $${++idx}`);
+            values.push(itemData.price);
 
             if (itemData.itemName) {
+                updateFields.push(`item_name = $${++idx}`);
                 values.push(itemData.itemName);
             }
 
+            const updateQuery = `
+                UPDATE list_items
+                SET ${updateFields.join(', ')}
+                WHERE id = $1
+                RETURNING id as "itemListId", 
+                            list_id AS "listId", 
+                            item_id AS "itemId", 
+                            item_name AS "itemName", 
+                            item_type AS "itemType", 
+                            quantity::float, price::float, 
+                            created_at AS "createdAt";
+            `;
+
             const updateResult = await connection.query(updateQuery, values);
+            
             return updateResult.rows[0];
         } catch (error) {
             throw new Error(error.message);
