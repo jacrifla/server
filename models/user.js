@@ -62,51 +62,48 @@ const User = {
     },
 
     update: async (userId, name, email) => {
+        console.log(`userId: ${userId}, name: ${name}, email: ${email}`)
         try {
+            const result = await connection.query('SELECT name, email FROM users WHERE id = $1', [userId]);
+
+            if (result.rows.length === 0) {
+                throw new Error('Usuário não encontrado.');
+            }
+
+            const currentUser = result.rows[0];
             const fields = [];
             const values = [];
-            let updateQuery = false;
+            let index = 2;
 
-            if (name !== null) {
-                const user = await connection.query('SELECT name FROM users WHERE id = $1', [userId]);
-                if (user.rows[0].name !== name) {
-                    fields.push('name = $2');
-                    values.push(name);
-                    updateQuery = true;
-                }
+            if (name !== null && name.trim() !== '' && name !== currentUser.name) {
+                fields.push(`name = $${index++}`);
+                values.push(name.trim());
             }
 
-            if (email !== null) {
-                const user = await connection.query('SELECT email FROM users WHERE id = $1', [userId]);
-                if (user.rows[0].email !== email.toLowerCase()) {
-                    fields.push('email = $3');
-                    values.push(email.toLowerCase());
-                    updateQuery = true;
-                }
+            if (email !== null && email.trim() !== '' && email.toLowerCase() !== currentUser.email) {
+                fields.push(`email = $${index++}`);
+                values.push(email.toLowerCase().trim());
             }
 
-            if (updateQuery) {
-                fields.push('updated_at = CURRENT_TIMESTAMP');
-            }
-
-            if (!updateQuery) {
+            if (fields.length === 0) {
                 throw new Error('Nenhuma alteração foi feita.');
             }
 
-            const query = `
-                UPDATE users
-                SET ${fields.join(', ')}
-                WHERE id = $1
-                RETURNING id as "userId", name, email, created_at as "createdAt", updated_at as "updatedAt";
-            `;
-
+            fields.push('updated_at = CURRENT_TIMESTAMP');
             values.unshift(userId);
 
-            const result = await connection.query(query, values);
-            return result.rows[0];
+            const updateQuery = `
+            UPDATE users
+            SET ${fields.join(', ')}
+            WHERE id = $1
+            RETURNING id as "userId", name, email, created_at as "createdAt", updated_at as "updatedAt";
+        `;
+
+            const updated = await connection.query(updateQuery, values);
+            return updated.rows[0];
 
         } catch (error) {
-            throw new Error(`${error.message}`);
+            throw new Error(error.message);
         }
     },
 
@@ -175,7 +172,7 @@ const User = {
             }
 
             const user = result.rows[0];
-            await User.verifyPassword( password, user.password );
+            await User.verifyPassword(password, user.password);
 
             delete user.password;
 
