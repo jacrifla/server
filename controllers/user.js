@@ -117,29 +117,22 @@ const UserController = {
         const { userId } = req.params;
         const { name, email } = req.body;
 
+        if (!userId) {
+            return res.status(400).json({
+                status: false,
+                message: 'O ID é necessário'
+            });
+        }
+
+        if (!name && !email) {
+            return res.status(400).json({
+                status: false,
+                message: 'Informe um nome ou email para atualizar'
+            });
+        }
+
         try {
-            if (!userId) {
-                return res.status(400).json({
-                    status: false,
-                    message: 'O ID é necessário'
-                });
-            };
-
-            if (!name && !email) {
-                return res.status(400).json({
-                    status: false,
-                    message: 'O nome ou email é necessário'
-                });
-            };
-
             const updatedUser = await UserModel.update(userId, name, email);
-
-            if (!updatedUser) {
-                return res.status(404).json({
-                    status: false,
-                    message: 'Usuário não encontrado'
-                });
-            };
 
             res.status(200).json({
                 status: true,
@@ -147,9 +140,9 @@ const UserController = {
                 data: updatedUser
             });
         } catch (error) {
-            res.status(500).json({
+            res.status(error.message.includes('Usuário não encontrado') ? 404 : 500).json({
                 status: false,
-                message: error.message,
+                message: error.message
             });
         }
     },
