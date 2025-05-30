@@ -1,6 +1,5 @@
 const ListModel = require('../models/lists');
 const ListTotals = require('../models/listTotals');
-const UserModel = require('../models/user');
 
 const ListController = {
     createList: async (req, res) => {
