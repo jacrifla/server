@@ -1,7 +1,7 @@
 const connection = require('../config/db');
 
 const Category = {
-    create: async (categoryName) => {
+    create: async (categoryName, description) => {
         try {
             const categoryExistsQuery = `
                 SELECT 1
@@ -15,11 +15,11 @@ const Category = {
             }
 
             const query = `
-                INSERT INTO categories (name)
-                VALUES ($1)
-                RETURNING id as "categoryId", name as "categoryName";
+                INSERT INTO categories (name, description)
+                VALUES ($1, $2)
+                RETURNING id as "categoryId", name as "categoryName", description;
             `;
-            const values = [categoryName];
+            const values = [categoryName, description];
             const result = await connection.query(query, values);
 
             return result.rows[0];
@@ -59,7 +59,7 @@ const Category = {
         }
     },
 
-    update: async (categoryId, categoryName) => {
+    update: async (categoryId, categoryName, description) => {
         try {
             const exists = await Category.categoryExists(categoryId);
 
@@ -69,11 +69,11 @@ const Category = {
 
             const query = `
                 UPDATE categories
-                SET name = $2
+                SET name = $2, description = $3
                 WHERE id = $1
-                RETURNING id as "categoryId", name as "categoryName";
-            `;
-            const values = [categoryId, categoryName];
+                RETURNING id as "categoryId", name as "categoryName", description;
+        `;
+            const values = [categoryId, categoryName, description || null];
             const result = await connection.query(query, values);
 
             return result.rows[0];
@@ -85,7 +85,7 @@ const Category = {
     findAll: async () => {
         try {
             const query = `
-                SELECT id as "categoryId", name as "categoryName"
+                SELECT id as "categoryId", name as "categoryName", description
                 FROM categories
                 ORDER BY name ASC;
             `;

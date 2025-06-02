@@ -3,7 +3,7 @@ const CategoryModel = require('../models/category');
 
 const CategoryController = {
     createCategory: async (req, res) => {
-        const { categoryName } = req.body;
+        const { categoryName, description } = req.body;
 
         try {
             if (!categoryName) {
@@ -13,7 +13,7 @@ const CategoryController = {
                 });
             };
 
-            const newCategory = await CategoryModel.create(categoryName);
+            const newCategory = await CategoryModel.create(categoryName, description || null);
 
             res.status(201).json({
                 status: true,
@@ -46,7 +46,7 @@ const CategoryController = {
 
     updateCategory: async (req, res) => {
         const { categoryId } = req.params;
-        const { categoryName } = req.body;
+        const { categoryName, description } = req.body;
 
         try {
             if (!categoryId || !categoryName) {
@@ -56,7 +56,7 @@ const CategoryController = {
                 });
             };
 
-            const updateCategory = await CategoryModel.update(categoryId, categoryName);
+            const updateCategory = await CategoryModel.update(categoryId, categoryName, description || null);
 
             res.status(200).json({
                 status: true,
