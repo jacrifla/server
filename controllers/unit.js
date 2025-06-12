@@ -12,7 +12,7 @@ const unitController = {
                 });
             }
 
-            const newUnit = await Unit.create(unitName.toUpperCase());
+            const newUnit = await Unit.create(unitName);
             res.status(201).json({
                 status: true,
                 message: "Unidade de medida criada com sucesso.",
@@ -75,7 +75,7 @@ const unitController = {
                 });
             }
 
-            const updatedUnit = await Unit.update(unitId, unitName.toUpperCase());
+            const updatedUnit = await Unit.update(unitId, unitName);
 
             if (!updatedUnit) {
                 return res.status(404).json({ 
