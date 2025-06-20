@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 const db = require('../config/db');
-const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_SECRET = process.env.SECRET_KEY;
 
 const authMiddleware = async (req, res, next) => {
     const authHeader = req.headers.authorization;
@@ -19,7 +19,7 @@ const authMiddleware = async (req, res, next) => {
 
         const result = await db.query(
             `
-            SELECT id, name, email
+            SELECT id as "userId", name, email
             FROM users
             WHERE id = $1;
             `,

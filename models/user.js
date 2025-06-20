@@ -2,7 +2,7 @@ const connection = require('../config/db');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
-const secretKey = process.env.SECRET_KEY;
+const SECRET_KEY = process.env.SECRET_KEY;
 const SALT_ROUND = 10;
 
 const User = {
@@ -153,7 +153,7 @@ const User = {
 
     generateToken: (userId) => {
         const payload = { userId };
-        const token = jwt.sign(payload, secretKey, { expiresIn: '7d' });
+        const token = jwt.sign(payload, SECRET_KEY, { expiresIn: '7d' });
         return token;
     },
 
@@ -176,7 +176,7 @@ const User = {
 
             delete user.password;
 
-            const token = User.generateToken(user.user_id);
+            const token = User.generateToken(user.userId);
             return { user, token };
         } catch (error) {
             throw new Error(`${error.message}`);
