@@ -85,7 +85,7 @@ const ListItemController = {
     },
 
     markAsPurchased: async (req, res) => {
-        const { itemListId, itemId, userId, categoryId = null, brandId = null, barcode = null, purchaseDate, marketId } = req.body;
+        const { itemListId, itemId, userId, categoryId = null, brandId = null, barcode = null, purchaseDate, marketId, unitId = null } = req.body;
 
         // Verifica se itemListId ou itemId e userId foram passados
         if (!userId || (!itemListId && !itemId)) {
@@ -130,7 +130,7 @@ const ListItemController = {
                 if (itemType === 'custom') {
                     // Criar item customizado e usar o itemId gerado
                     try {
-                        const newItem = await createItem(itemName, categoryId, brandId, barcode);
+                        const newItem = await createItem(itemName, categoryId, brandId, barcode, unitId, userId);
                         if (!newItem || !newItem.itemId) {
                             throw new Error('Falha ao criar item personalizado.');
                         }
