@@ -1,4 +1,3 @@
-const { status } = require('server/reply');
 const ItemModel = require('../models/items');
 const { isValidBarcode } = require('../utils/validation');
 
