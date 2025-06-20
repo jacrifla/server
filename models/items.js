@@ -80,12 +80,18 @@ const Items = {
     deleteItem: async (itemId) => {
         try {
             const query = `
-                DELETE FROM items
-                WHERE id = $1
-                RETURNING id as "itemId";
+                UPDATE items
+                SET deleted_at = NOW()
+                WHERE id = $1 AND deleted_at IS NULL
+                RETURNING id AS "itemId";
             `;
             const values = [itemId];
             const result = await connection.query(query, values);
+
+            if (result.rowCount === 0) {
+                throw new Error(`Item com id ${itemId} não encontrado ou já deletado.`);
+            }
+
             return result.rows[0];
         } catch (error) {
             throw new Error('Erro ao deletar item: ' + error.message);
@@ -108,7 +114,7 @@ const Items = {
             LEFT JOIN categories c ON i.category_id = c.id
             LEFT JOIN brands b ON i.brand_id = b.id
             LEFT JOIN units u ON i.unit_id = u.id
-            WHERE i.id = $1;
+            WHERE i.id = $1 AND i.deleted_at IS NULL;
         `;
         const values = [id];
         const result = await connection.query(query, values);
@@ -131,7 +137,7 @@ const Items = {
             LEFT JOIN categories c ON i.category_id = c.id
             LEFT JOIN brands b ON i.brand_id = b.id
             LEFT JOIN units u ON i.unit_id = u.id
-            WHERE i.name ILIKE $1;
+            WHERE i.name ILIKE $1 AND i.deleted_at IS NULL;
         `;
         const values = [`%${name}%`];
         const result = await connection.query(query, values);
@@ -154,7 +160,7 @@ const Items = {
             LEFT JOIN categories c ON i.category_id = c.id
             LEFT JOIN brands b ON i.brand_id = b.id
             LEFT JOIN units u ON i.unit_id = u.id
-            WHERE i.barcode = $1;
+            WHERE i.barcode = $1 AND i.deleted_at IS NULL;
         `;
         const values = [barcode];
         const result = await connection.query(query, values);
@@ -178,12 +184,33 @@ const Items = {
             LEFT JOIN categories c ON i.category_id = c.id
             LEFT JOIN brands b ON i.brand_id = b.id
             LEFT JOIN units u ON i.unit_id = u.id
+            WHERE i.deleted_at IS NULL
             ORDER BY i.name;
         `;
         const result = await connection.query(query);
         return result.rows;
     },
 
+    restoreItem: async (itemId) => {
+        try {
+            const query = `
+                UPDATE items
+                SET deleted_at = NULL
+                WHERE id = $1 AND deleted_at IS NOT NULL
+                RETURNING id AS "itemId";
+            `;
+            const values = [itemId];
+            const result = await connection.query(query, values);
+
+            if (result.rowCount === 0) {
+                throw new Error(`Item com id ${itemId} não foi encontrado ou já está ativo.`);
+            }
+
+            return result.rows[0];
+        } catch (error) {
+            throw new Error('Erro ao restaurar item: ' + error.message);
+        }
+    },
 }
 
 module.exports = Items;

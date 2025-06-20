@@ -1,3 +1,4 @@
+const { status } = require('server/reply');
 const ItemModel = require('../models/items');
 const { isValidBarcode } = require('../utils/validation');
 
@@ -31,11 +32,18 @@ const ItemController = {
         const { itemId } = req.params;
         const { name, categoryId, brandId, barcode, unitId, updatedBy } = req.body;
 
+        if (isNaN(itemId)) {
+            return res.status(400).json({
+                status: false,
+                message: 'ID do item inválido.'
+            });
+        }
+
         try {
             if (barcode && !isValidBarcode(barcode)) {
                 return res.status(400).json({
                     status: false,
-                    message: 'Barcode inválido.'
+                    message: 'O código de barras é inválido.'
                 });
             }
 
@@ -55,11 +63,45 @@ const ItemController = {
 
     deleteItem: async (req, res) => {
         const { itemId } = req.params;
+
+        if (isNaN(itemId)) {
+            return res.status(400).json({
+                status: false,
+                message: 'ID do item inválido.'
+            });
+        }
+
         try {
             const deletedItem = await ItemModel.deleteItem(itemId);
             res.status(200).json({
                 status: true,
+                data: deletedItem,
                 message: 'Item excluído com sucesso'
+            });
+        } catch (error) {
+            res.status(500).json({
+                status: false,
+                message: error.message
+            });
+        }
+    },
+
+    restoreItem: async (req, res) => {
+        const { itemId } = req.params;
+
+        if (isNaN(itemId)) {
+            return res.status(400).json({
+                status: false,
+                message: 'ID do item inválido.'
+            });
+        }
+
+        try {
+            const restoredItem = await ItemModel.restoreItem(itemId);
+            res.status(200).json({
+                status: true,
+                data: restoredItem,
+                message: 'Item restaurado com sucesso'
             });
         } catch (error) {
             res.status(500).json({
@@ -100,13 +142,20 @@ const ItemController = {
     getItemById: async (req, res) => {
         const { itemId } = req.params;
 
-        try {
-            const item = await ItemModel.getItemById(Number(itemId));
+        if (isNaN(itemId)) {
+            return res.status(400).json({
+                status: false,
+                message: 'ID do item inválido.'
+            });
+        }
 
-            if (item) {
+        try {
+            const item = await ItemModel.getItemById(itemId);
+
+            if (item && item.length > 0) {
                 res.status(200).json({
                     status: true,
-                    data: item,
+                    data: item[0],
                 });
             } else {
                 res.status(404).json({
