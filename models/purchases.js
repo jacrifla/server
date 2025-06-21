@@ -29,11 +29,15 @@ const PurchaseModel = {
 
     getMostPurchasedItems: async (userId, limit = 5) => {
         const query = `
-            SELECT i.name as "itemName", SUM(p.quantity)::float AS "totalQuantity"
+            SELECT 
+                i.id as "itemId",
+                i.name as "itemName", 
+                SUM(p.quantity)::float AS "totalQuantity"
             FROM purchases p
             JOIN items i ON p.item_id = i.id
             WHERE p.user_id = $1
-            GROUP BY i.name
+            GROUP BY i.id, i.name
+            HAVING SUM(p.quantity) > 1
             ORDER BY SUM(p.quantity) DESC
             LIMIT $2;
         `;
