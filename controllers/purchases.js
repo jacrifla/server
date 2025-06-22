@@ -2,7 +2,8 @@ const PurchaseModel = require('../models/purchases');
 
 const PurchaseController = {
     createPurchase: async (req, res) => {
-        const { itemId, userId, quantity, price, purchaseDate, marketId } = req.body;
+        const userId = req.user.userId;
+        const { itemId, quantity, price, purchaseDate, marketId } = req.body;
         const total = price * quantity;
 
         // Usar a data fornecida ou pegar a data atual
@@ -32,7 +33,8 @@ const PurchaseController = {
     },
 
     getTotalSpent: async (req, res) => {
-        const { userId, startDate, endDate } = req.query;
+        const userId = req.user.userId;
+        const { startDate, endDate } = req.query;
 
         if (!userId || !startDate || !endDate) {
             return res.status(400).json({
@@ -56,7 +58,8 @@ const PurchaseController = {
     },
 
     getMostPurchased: async (req, res) => {
-        const { userId, limit } = req.query;
+        const userId = req.user.userId;
+        const { limit } = req.query;
 
         try {
             const mostPurchased = await PurchaseModel.getMostPurchasedItems(userId, limit);
@@ -73,7 +76,8 @@ const PurchaseController = {
     },
 
     getItemsPurchased: async (req, res) => {
-        const { userId, startDate, endDate } = req.query;
+        const userId = req.user.userId;
+        const { startDate, endDate } = req.query;
 
         try {
             const totalQuantity = await PurchaseModel.getItemsPurchasedByPeriod(userId, startDate, endDate);
@@ -90,7 +94,8 @@ const PurchaseController = {
     },
 
     getAvgSpendPerPurchase: async (req, res) => {
-        const { userId, startDate, endDate } = req.query;
+        const userId = req.user.userId;
+        const { startDate, endDate } = req.query;
 
         try {
             const avgSpend = await PurchaseModel.getAvgSpendPerPurchase(userId, startDate, endDate);
@@ -107,7 +112,8 @@ const PurchaseController = {
     },
 
     getLargestPurchase: async (req, res) => {
-        const { userId, startDate, endDate } = req.query;
+        const userId = req.user.userId;
+        const { startDate, endDate } = req.query;
 
         try {
             const largestPurchase = await PurchaseModel.getLargestPurchase(userId, startDate, endDate);
@@ -124,7 +130,8 @@ const PurchaseController = {
     },
 
     getAvgDailySpend: async (req, res) => {
-        const { userId, startDate, endDate } = req.query;
+        const userId = req.user.userId;
+        const { startDate, endDate } = req.query;
 
         try {
             const avgDailySpend = await PurchaseModel.getAvgDailySpend(userId, startDate, endDate);
@@ -141,7 +148,8 @@ const PurchaseController = {
     },
 
     getCategoryPurchases: async (req, res) => {
-        const { userId, startDate, endDate } = req.query;
+        const userId = req.user.userId;
+        const { startDate, endDate } = req.query;
 
         try {
             const categoryPurchases = await PurchaseModel.getCategoryPurchases(userId, startDate, endDate);
@@ -158,13 +166,17 @@ const PurchaseController = {
     },
 
     getComparisonSpent: async (req, res) => {
-        const { userId, startDate, endDate, limit, offset } = req.query;
-
         try {
-            const comparisonSpent = await PurchaseModel.getComparisonSpent(userId, startDate, endDate, limit, offset);
+            const userId = req.user.userId;
+            const { startDate, endDate, page = 1, limit = 10 } = req.query;
+            const offset = (page - 1) * limit;
+
+            const comparisonSpent = await PurchaseModel.getComparisonSpent(userId, startDate, endDate, Number(limit), Number(offset));
+            const totalCount = await PurchaseModel.getComparisonSpentCount(userId, startDate, endDate);
             res.status(200).json({
                 status: true,
-                data: comparisonSpent
+                data: [comparisonSpent, totalCount]
+                
             });
         } catch (error) {
             res.status(500).json({
@@ -175,7 +187,8 @@ const PurchaseController = {
     },
 
     getTopItemsByValue: async (req, res) => {
-        const { userId, startDate, endDate } = req.query;
+        const userId = req.user.userId;
+        const { startDate, endDate } = req.query;
 
         try {
             const topItems = await PurchaseModel.getTopItemsByValue(userId, startDate, endDate);

@@ -110,37 +110,77 @@ const PurchaseModel = {
         return result.rows;
     },
 
-    getComparisonSpent: async (userId, startDate, endDate, limit, offset) => {
+    getComparisonSpentCount: async (userId, startDate, endDate) => {
         const query = `
-            WITH price_data AS (
+            SELECT COUNT(*) FROM (
                 SELECT 
-                    i.id AS itemId,
-                    i.name AS "itemName",
-                    MIN(p.price) AS "minPrice",
-                    MAX(p.price) AS "maxPrice"
+                    i.id
                 FROM purchases p
                 JOIN items i ON p.item_id = i.id
                 WHERE p.user_id = $1
                 AND p.purchase_date BETWEEN $2 AND $3
-                GROUP BY i.id, i.name
+                GROUP BY i.id
                 HAVING MAX(p.price) - MIN(p.price) >= 1
+            ) AS subquery;
+        `;
+        const values = [userId, startDate, endDate];
+        const result = await connection.query(query, values);
+        return parseInt(result.rows[0].count, 10);
+    },
+
+    getComparisonSpent: async (userId, startDate, endDate, limit = 10, offset = 0) => {
+        const query = `
+            WITH price_data AS (
+            SELECT 
+                i.id AS itemId,
+                i.name AS "itemName",
+                MIN(p.price) AS "minPrice",
+                MAX(p.price) AS "maxPrice"
+            FROM purchases p
+            JOIN items i ON p.item_id = i.id
+            WHERE p.user_id = $1
+                AND p.purchase_date BETWEEN $2 AND $3
+            GROUP BY i.id, i.name
+            HAVING MAX(p.price) - MIN(p.price) >= 1
             )
             SELECT 
-                "itemName",
-                "minPrice",
-                "maxPrice",
-                (SELECT p2.purchase_date 
+            pd."itemName",
+            pd."minPrice",
+            pd."maxPrice",
+            (
+                SELECT p2.purchase_date 
                 FROM purchases p2 
                 WHERE p2.item_id = pd.itemId 
-                AND p2.price = "minPrice" 
+                AND p2.price = pd."minPrice"
                 ORDER BY p2.purchase_date ASC 
-                LIMIT 1) AS "minPriceDate",
-                (SELECT p2.purchase_date 
+                LIMIT 1
+            ) AS "minPriceDate",
+            (
+                SELECT m.name 
+                FROM purchases p2
+                JOIN markets m ON p2.market_id = m.id
+                WHERE p2.item_id = pd.itemId 
+                AND p2.price = pd."minPrice"
+                ORDER BY p2.purchase_date ASC 
+                LIMIT 1
+            ) AS "minPriceMarket",
+            (
+                SELECT p2.purchase_date 
                 FROM purchases p2 
                 WHERE p2.item_id = pd.itemId 
-                AND p2.price = "maxPrice" 
+                AND p2.price = pd."maxPrice"
                 ORDER BY p2.purchase_date ASC 
-                LIMIT 1) AS "maxPriceDate"
+                LIMIT 1
+            ) AS "maxPriceDate",
+            (
+                SELECT m.name 
+                FROM purchases p2
+                JOIN markets m ON p2.market_id = m.id
+                WHERE p2.item_id = pd.itemId 
+                AND p2.price = pd."maxPrice"
+                ORDER BY p2.purchase_date ASC 
+                LIMIT 1
+            ) AS "maxPriceMarket"
             FROM price_data pd
             ORDER BY "itemName"
             LIMIT $4 OFFSET $5;
