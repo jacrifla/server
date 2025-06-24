@@ -203,6 +203,25 @@ const PurchaseController = {
             });
         }
     },
+
+    getItemPriceVariation: async (req, res) => {
+        const userId = req.user.userId;
+        const { startDate, endDate } = req.query;
+
+        try {
+            const variation = await PurchaseModel.getItemPriceVariation(userId, startDate, endDate);
+
+            res.status(200).json({
+                status: true,
+                data: variation
+            });
+        } catch (error) {
+            res.status(500).json({
+                status: false,
+                error: error.message
+            });
+        }
+    },
 };
 
 module.exports = PurchaseController;

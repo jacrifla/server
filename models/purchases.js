@@ -204,6 +204,26 @@ const PurchaseModel = {
         const result = await connection.query(query, values);
         return result.rows;
     },
+
+    getItemPriceVariation: async (userId, startDate, endDate) => {
+        const query = `
+            SELECT 
+                i.name AS item_name,
+                MIN(p.price) AS min_price,
+                MAX(p.price) AS max_price,
+                MAX(p.price) - MIN(p.price) AS price_difference
+            FROM purchases p
+            JOIN items i ON p.item_id = i.id
+            WHERE p.user_id = $1
+            AND p.purchase_date BETWEEN $2 AND $3
+            GROUP BY i.name
+            HAVING MAX(p.price) - MIN(p.price) >= 1
+            ORDER BY price_difference DESC;
+        `
+        const values = [userId, startDate, endDate];
+        const result = await connection.query(query, values);
+        return result.rows;
+    },
 };
 
 module.exports = PurchaseModel;

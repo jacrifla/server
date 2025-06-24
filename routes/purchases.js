@@ -13,5 +13,6 @@ router.get('/avg-daily-spend', authMiddleware, PurchaseController.getAvgDailySpe
 router.get('/category-purchases', authMiddleware, PurchaseController.getCategoryPurchases);
 router.get('/comparison-spent', authMiddleware, PurchaseController.getComparisonSpent);
 router.get('/top-items-by-value', authMiddleware, PurchaseController.getTopItemsByValue);
+router.get('/variation-purchases', authMiddleware, PurchaseController.getItemPriceVariation);
 
 module.exports = router;
