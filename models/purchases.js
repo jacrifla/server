@@ -144,43 +144,37 @@ const PurchaseModel = {
             HAVING MAX(p.price) - MIN(p.price) >= 1
             )
             SELECT 
-            pd."itemName",
-            pd."minPrice",
-            pd."maxPrice",
-            (
-                SELECT p2.purchase_date 
+                pd."itemName",
+                pd."minPrice",
+                -- Data e nome do mercado do menor preço
+                (SELECT p2.purchase_date 
                 FROM purchases p2 
                 WHERE p2.item_id = pd.itemId 
                 AND p2.price = pd."minPrice"
                 ORDER BY p2.purchase_date ASC 
-                LIMIT 1
-            ) AS "minPriceDate",
-            (
-                SELECT m.name 
+                LIMIT 1) AS "minPriceDate",
+                (SELECT m.name 
                 FROM purchases p2
                 JOIN markets m ON p2.market_id = m.id
                 WHERE p2.item_id = pd.itemId 
                 AND p2.price = pd."minPrice"
                 ORDER BY p2.purchase_date ASC 
-                LIMIT 1
-            ) AS "minPriceMarket",
-            (
-                SELECT p2.purchase_date 
+                LIMIT 1) AS "minPriceMarket",
+                pd."maxPrice",
+                -- Data e nome do mercado do maior preço
+                (SELECT p2.purchase_date 
                 FROM purchases p2 
                 WHERE p2.item_id = pd.itemId 
                 AND p2.price = pd."maxPrice"
                 ORDER BY p2.purchase_date ASC 
-                LIMIT 1
-            ) AS "maxPriceDate",
-            (
-                SELECT m.name 
+                LIMIT 1) AS "maxPriceDate",
+                (SELECT m.name 
                 FROM purchases p2
                 JOIN markets m ON p2.market_id = m.id
                 WHERE p2.item_id = pd.itemId 
                 AND p2.price = pd."maxPrice"
                 ORDER BY p2.purchase_date ASC 
-                LIMIT 1
-            ) AS "maxPriceMarket"
+                LIMIT 1) AS "maxPriceMarket"
             FROM price_data pd
             ORDER BY "itemName"
             LIMIT $4 OFFSET $5;
