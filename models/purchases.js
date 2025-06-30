@@ -27,21 +27,21 @@ const PurchaseModel = {
         return result.rows[0];
     },
 
-    getMostPurchasedItems: async (userId, limit = 5) => {
+    getMostPurchasedItems: async (userId, startDate, endDate, limit = 5) => {
         const query = `
-            SELECT 
-                i.id as "itemId",
-                i.name as "itemName", 
-                SUM(p.quantity)::float AS "totalQuantity"
-            FROM purchases p
-            JOIN items i ON p.item_id = i.id
-            WHERE p.user_id = $1
-            GROUP BY i.id, i.name
-            HAVING SUM(p.quantity) > 1
-            ORDER BY SUM(p.quantity) DESC
-            LIMIT $2;
-        `;
-        const values = [userId, limit];
+        SELECT 
+            i.id as "itemId",
+            i.name as "itemName", 
+            SUM(p.quantity)::float AS "totalQuantity"
+        FROM purchases p
+        JOIN items i ON p.item_id = i.id
+        WHERE p.user_id = $1 AND purchase_date BETWEEN $2 AND $3
+        GROUP BY i.id, i.name
+        HAVING SUM(p.quantity) > 1
+        ORDER BY SUM(p.quantity) DESC
+        LIMIT ${limit};
+    `;
+        const values = [userId, startDate, endDate];
         const result = await connection.query(query, values);
         return result.rows;
     },
@@ -57,6 +57,7 @@ const PurchaseModel = {
         return result.rows[0];
     },
 
+    // Gasto Médio por Compra
     getAvgSpendPerPurchase: async (userId, startDate, endDate) => {
         const query = `
             SELECT AVG(total)::float AS "avgSpendPerPurchase"
@@ -68,6 +69,7 @@ const PurchaseModel = {
         return result.rows[0];
     },
 
+    // Maior Gasto com Item
     getLargestPurchase: async (userId, startDate, endDate) => {
         const query = `
             SELECT MAX(total)::float AS "largestPurchase"
