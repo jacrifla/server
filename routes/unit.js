@@ -3,10 +3,9 @@ const router = express.Router();
 const unitController = require('../controllers/unit');
 const authMiddleware = require('../middleware/authMiddleware');
 
-router.post("/", authMiddleware, unitController.create);
+router.post("/", authMiddleware, unitController.createUnit);
 router.get("/", unitController.findAll);
-router.get("/:unitId", unitController.findById);
-router.put("/:unitId", authMiddleware, unitController.update);
-router.delete("/:unitId", authMiddleware, unitController.delete);
+router.put("/:id", authMiddleware, unitController.updateUnit);
+router.delete("/:id", authMiddleware, unitController.deleteUnit);
 
 module.exports = router;
