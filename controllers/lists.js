@@ -3,12 +3,13 @@ const ListTotals = require('../models/listTotals');
 
 const ListController = {
     createList: async (req, res) => {
-        const { userId, listName } = req.body;
+        const { listName } = req.body;
+        const userId = req.user?.userId;        
 
-        if (!userId || !listName) {
+        if (!listName) {
             return res.status(400).json({
                 status: false,
-                message: 'ID do usuário e o nome da lista são obrigatórios'
+                message: 'Nome da lista é obrigatório'
             });
         };
 
@@ -46,14 +47,7 @@ const ListController = {
     },
 
     findListsByUserId: async (req, res) => {
-        const { userId } = req.params;
-
-        if (!userId) {
-            return res.status(400).json({
-                status: false,
-                message: 'ID do usuário é obrigatório'
-            });
-        };
+        const userId = req.user?.userId;
 
         try {
             const getUserLists = await ListModel.findByUserId(userId);
@@ -106,8 +100,9 @@ const ListController = {
     },
 
     markAsCompleted: async (req, res) => {
+        const userId = req.user?.userId;
         const { listId } = req.params;
-        const { totalAmount, purchaseDate, userId } = req.body;
+        const { totalAmount, purchaseDate } = req.body;
 
         if (!listId || totalAmount == null || !userId) {
             return res.status(400).json({

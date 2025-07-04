@@ -5,7 +5,7 @@ const authMiddleware = require('../middleware/authMiddleware');
 
 router.post('/', authMiddleware, listController.createList);
 router.get('/find-all', authMiddleware, listController.findAllLists)
-router.get('/:userId', authMiddleware, listController.findListsByUserId);
+router.get('/me', authMiddleware, listController.findListsByUserId);
 router.put('/:listId', authMiddleware, listController.updateList);
 router.patch('/mark/:listId', authMiddleware, listController.markAsCompleted);
 router.delete('/:listId', authMiddleware, listController.deleteList);
