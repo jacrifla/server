@@ -85,13 +85,14 @@ const ListItemController = {
     },
 
     markAsPurchased: async (req, res) => {
-        const { itemListId, itemId, userId, categoryId = null, brandId = null, barcode = null, purchaseDate, marketId, unitId = null } = req.body;
+        const userId = req.user?.userId; 
+        const { itemListId, itemId, categoryId = null, brandId = null, barcode = null, purchaseDate, marketId, unitId = null } = req.body;
 
         // Verifica se itemListId ou itemId e userId foram passados
-        if (!userId || (!itemListId && !itemId)) {
+        if (!itemListId && !itemId) {
             return res.status(400).json({
                 status: false,
-                message: 'Parâmetros obrigatórios ausentes: itemListId ou itemId, userId.',
+                message: 'Parâmetros obrigatórios ausentes: id da lista ou id do item.',
             });
         }
 
