@@ -119,16 +119,16 @@ const ListController = {
         }
 
         try {
-            const data = {
+            // Passa os parâmetros separadamente, como o model espera
+            const listTotal = await ListTotals.create(
                 listId,
                 userId,
-                total: totalAmount,
-                purchaseDate: purchaseDate || new Date().toISOString().split('T')[0],
-                marketId: marketId || null,
-                chaveAcesso: chaveAcesso?.trim() || null,
-            };
+                totalAmount,
+                purchaseDate || new Date().toISOString().split('T')[0],
+                marketId || null,
+                chaveAcesso?.trim() || null
+            );
 
-            const listTotal = await ListTotals.create(data);
             const mark = await ListModel.markAsCompleted(listId, totalAmount);
 
             if (!mark) {
@@ -150,6 +150,7 @@ const ListController = {
             });
         }
     },
+
 
     deleteList: async (req, res) => {
         const { listId } = req.params;
