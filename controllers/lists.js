@@ -4,7 +4,7 @@ const ListTotals = require('../models/listTotals');
 const ListController = {
     createList: async (req, res) => {
         const { listName } = req.body;
-        const userId = req.user?.userId;        
+        const userId = req.user?.userId;
 
         if (!listName) {
             return res.status(400).json({
@@ -102,7 +102,7 @@ const ListController = {
     markAsCompleted: async (req, res) => {
         const userId = req.user?.userId;
         const { listId } = req.params;
-        const { totalAmount, purchaseDate } = req.body;
+        const { totalAmount, purchaseDate, marketId, chaveAcesso } = req.body;
 
         if (!listId || totalAmount == null || !userId) {
             return res.status(400).json({
@@ -119,13 +119,16 @@ const ListController = {
         }
 
         try {
-            // Verificar se a data foi fornecida, se não, usar a data atual
-            const dateToUse = purchaseDate || new Date().toISOString().split('T')[0];
+            const data = {
+                listId,
+                userId,
+                total: totalAmount,
+                purchaseDate: purchaseDate || new Date().toISOString().split('T')[0],
+                marketId: marketId || null,
+                chaveAcesso: chaveAcesso?.trim() || null,
+            };
 
-            // Passando o userId correto
-            const listTotal = await ListTotals.create(listId, userId, totalAmount, dateToUse);
-
-            // Aqui você pode marcar a lista como completada ou o que for necessário
+            const listTotal = await ListTotals.create(data);
             const mark = await ListModel.markAsCompleted(listId, totalAmount);
 
             if (!mark) {
