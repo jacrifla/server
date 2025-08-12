@@ -85,7 +85,7 @@ const ListItemController = {
     },
 
     markAsPurchased: async (req, res) => {
-        const userId = req.user?.userId; 
+        const userId = req.user?.userId;
         const { itemListId, itemId, categoryId = null, brandId = null, barcode = null, purchaseDate, marketId, unitId = null } = req.body;
 
         // Verifica se itemListId ou itemId e userId foram passados
@@ -135,7 +135,7 @@ const ListItemController = {
                         if (!newItem || !newItem.itemId) {
                             throw new Error('Falha ao criar item personalizado.');
                         }
-                        finalItemId = newItem.itemId; // Agora temos o itemId do novo item
+                        finalItemId = newItem.itemId;
                     } catch (error) {
                         return res.status(500).json({
                             status: false,
@@ -156,6 +156,11 @@ const ListItemController = {
             // Calcular total da compra
             const total = itemDetails ? itemDetails.price * itemDetails.quantity : 0;
 
+            // Extrair apenas a string da data do purchaseDate, caso seja objeto
+            const purePurchaseDate = typeof purchaseDate === 'object' && purchaseDate.purchaseDate
+                ? purchaseDate.purchaseDate
+                : purchaseDate;
+
             try {
                 await createPurchase(
                     finalItemId,
@@ -163,7 +168,7 @@ const ListItemController = {
                     itemDetails.quantity,
                     itemDetails.price,
                     total,
-                    purchaseDate,
+                    purePurchaseDate,
                     marketId
                 );
 
