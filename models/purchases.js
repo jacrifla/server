@@ -27,23 +27,53 @@ const PurchaseModel = {
         return result.rows[0];
     },
 
-    getMostPurchasedItems: async (userId, startDate, endDate, limit = 5) => {
+    getMostPurchasedItems: async (userId, startDate, endDate, page = 1, limit = 5, minQuantity = 1) => {
+        const offset = (page - 1) * limit;
+
+        // Conta total de itens únicos no período
+        const countQuery = `
+            SELECT COUNT(*)::int AS "totalItems"
+            FROM (
+            SELECT i.id
+            FROM purchases p
+            JOIN items i ON p.item_id = i.id
+            WHERE p.user_id = $1 
+                AND p.purchase_date BETWEEN $2 AND $3
+            GROUP BY i.id
+            HAVING SUM(p.quantity) >= $4
+            ) sub;
+        `;
+        const countValues = [userId, startDate, endDate, minQuantity];
+        const countResult = await connection.query(countQuery, countValues);
+        const totalItems = countResult.rows[0].totalItems;
+        const totalPages = Math.ceil(totalItems / limit);
+
+        // Busca os itens paginados
         const query = `
-        SELECT 
-            i.id as "itemId",
-            i.name as "itemName", 
-            SUM(p.quantity)::float AS "totalQuantity"
-        FROM purchases p
-        JOIN items i ON p.item_id = i.id
-        WHERE p.user_id = $1 AND purchase_date BETWEEN $2 AND $3
-        GROUP BY i.id, i.name
-        HAVING SUM(p.quantity) > 1
-        ORDER BY SUM(p.quantity) DESC
-        LIMIT ${limit};
-    `;
-        const values = [userId, startDate, endDate];
+            SELECT 
+            i.id AS "itemId",
+            i.name AS "itemName", 
+            SUM(p.quantity)::float AS "totalQuantity",
+            SUM(p.quantity * p.price)::float AS "totalSpent"
+            FROM purchases p
+            JOIN items i ON p.item_id = i.id
+            WHERE p.user_id = $1 
+            AND p.purchase_date BETWEEN $2 AND $3
+            GROUP BY i.id, i.name
+            HAVING SUM(p.quantity) >= $4
+            ORDER BY "totalSpent" DESC
+            LIMIT $5 OFFSET $6;
+        `;
+        const values = [userId, startDate, endDate, minQuantity, limit, offset];
         const result = await connection.query(query, values);
-        return result.rows;
+
+        return {
+            items: result.rows || [],
+            totalItems,
+            totalPages,
+            page,
+            limit
+        };
     },
 
     getItemsPurchasedByPeriod: async (userId, startDate, endDate) => {
@@ -84,7 +114,7 @@ const PurchaseModel = {
     getAvgDailySpend: async (userId, startDate, endDate) => {
         const query = `
             SELECT  SUM(total)::float / 
-                    (SELECT ( $3::DATE - $2::DATE ) ) AS "avgDailySpend"
+                    ( ($3::DATE - $2::DATE) + 1 ) AS "avgDailySpend"
             FROM purchases
             WHERE user_id = $1 AND purchase_date BETWEEN $2 AND $3;
         `;

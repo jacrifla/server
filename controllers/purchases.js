@@ -59,17 +59,32 @@ const PurchaseController = {
 
     getMostPurchased: async (req, res) => {
         const userId = req.user.userId;
-        const { startDate, endDate, limit } = req.query;
+        const { startDate, endDate, limit, page } = req.query;
 
-        const rawLimit = parseInt(limit);
-        const safeLimit = isNaN(rawLimit) || rawLimit <= 0 ? 5 : rawLimit;
+        const safeLimit = Math.max(parseInt(limit) || 5, 1);
+        const safePage = Math.max(parseInt(page) || 1, 1);
 
         try {
-            const mostPurchased = await PurchaseModel.getMostPurchasedItems(userId, startDate, endDate, safeLimit);
+            const mostPurchased = await PurchaseModel.getMostPurchasedItems(
+                userId,
+                startDate,
+                endDate,
+                safePage,
+                safeLimit
+            );
+
             res.status(200).json({
-                status: true,
-                data: mostPurchased
-            });
+            status: true,
+            data: {
+                items: mostPurchased.items,
+                meta: {
+                    totalItems: mostPurchased.totalItems,
+                    totalPages: mostPurchased.totalPages,
+                    page: mostPurchased.page,
+                    limit: mostPurchased.limit
+                }
+            }
+        });
         } catch (error) {
             res.status(500).json({
                 status: false,
